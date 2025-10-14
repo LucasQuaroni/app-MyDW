@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
 import App from './App.js'
-import Layout from './Layout.tsx'
-import About from './About.tsx'
-import Contact from './Contact.tsx'
+import Layout from './pages/Layout.tsx'
+import About from './pages/About.tsx'
+import Contact from './pages/Contact.tsx'
 
 const router = createBrowserRouter([
   {
