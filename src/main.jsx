@@ -6,6 +6,10 @@ import App from './App.js'
 import Layout from './pages/Layout.tsx'
 import About from './pages/About.tsx'
 import Contact from './pages/Contact.tsx'
+import Login from './pages/Login.tsx'
+import Register from './pages/Register.tsx'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute.tsx'
 
 const router = createBrowserRouter([
   {
@@ -27,12 +31,24 @@ const router = createBrowserRouter([
         Component: Contact,
         errorElement: <div>Error</div>,
       },
+      {
+        path: "login",
+        Component: Login,
+        errorElement: <div>Error</div>,
+      },
+      {
+        path: "register",
+        Component: Register,
+        errorElement: <div>Error</div>,
+      },
     ],
   },
 ])
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </StrictMode>,
 )
