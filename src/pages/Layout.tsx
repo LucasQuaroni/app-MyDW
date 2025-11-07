@@ -17,15 +17,15 @@ const Layout = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-950">
             {/* Navbar */}
-            <nav className="bg-white shadow-md border-b border-gray-200">
+            <nav className="bg-gray-900 border-b border-gray-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo/Brand */}
                         <div className="flex-shrink-0">
                             <Link to="/">
-                                <h1 className="text-xl font-bold text-gray-800">MyDW</h1>
+                                <h1 className="text-xl font-bold text-orange-500">MyDW</h1>
                             </Link>
                         </div>
                         
@@ -33,19 +33,19 @@ const Layout = () => {
                         <div className="hidden md:block">
                             <div className="ml-10 flex items-baseline space-x-4">
                                 <Link 
-                                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
+                                    className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
                                     to="/"
                                 >
                                     Home
                                 </Link>
                                 <Link 
-                                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
+                                    className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
                                     to="/about"
                                 >
                                     About
                                 </Link>
                                 <Link 
-                                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
+                                    className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
                                     to="/contact"
                                 >
                                     Contact
@@ -54,12 +54,12 @@ const Layout = () => {
                                 {/* Auth buttons */}
                                 {currentUser ? (
                                     <>
-                                        <span className="text-gray-700 px-3 py-2 text-sm">
+                                        <span className="text-gray-400 px-3 py-2 text-sm">
                                             {currentUser.email}
                                         </span>
                                         <button
                                             onClick={handleLogout}
-                                            className="text-gray-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                                            className="text-gray-300 hover:text-red-400 hover:bg-red-900/20 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                                         >
                                             Cerrar sesión
                                         </button>
@@ -67,13 +67,13 @@ const Layout = () => {
                                 ) : (
                                     <>
                                         <Link 
-                                            className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
+                                            className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
                                             to="/login"
                                         >
                                             Iniciar sesión
                                         </Link>
                                         <Link 
-                                            className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200" 
+                                            className="bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 shadow-lg" 
                                             to="/register"
                                         >
                                             Registrarse
@@ -87,7 +87,7 @@ const Layout = () => {
                         <div className="md:hidden">
                             <button 
                                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                className="text-gray-600 hover:text-gray-900 focus:outline-none focus:text-gray-900"
+                                className="text-gray-300 hover:text-orange-400 focus:outline-none focus:text-orange-400"
                             >
                                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -100,23 +100,23 @@ const Layout = () => {
                 {/* Mobile menu */}
                 {mobileMenuOpen && (
                     <div className="md:hidden">
-                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
+                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-800 border-t border-gray-700">
                             <Link 
-                                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
+                                className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
                                 to="/"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
                                 Home
                             </Link>
                             <Link 
-                                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
+                                className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
                                 to="/about"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
                                 About
                             </Link>
                             <Link 
-                                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
+                                className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
                                 to="/contact"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
@@ -126,7 +126,7 @@ const Layout = () => {
                             {/* Auth buttons mobile */}
                             {currentUser ? (
                                 <>
-                                    <div className="px-3 py-2 text-sm text-gray-700">
+                                    <div className="px-3 py-2 text-sm text-gray-400">
                                         {currentUser.email}
                                     </div>
                                     <button
@@ -134,7 +134,7 @@ const Layout = () => {
                                             handleLogout();
                                             setMobileMenuOpen(false);
                                         }}
-                                        className="text-gray-600 hover:text-red-600 hover:bg-red-50 block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                                        className="text-gray-300 hover:text-red-400 hover:bg-red-900/20 block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                                     >
                                         Cerrar sesión
                                     </button>
@@ -142,14 +142,14 @@ const Layout = () => {
                             ) : (
                                 <>
                                     <Link 
-                                        className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
+                                        className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
                                         to="/login"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
                                         Iniciar sesión
                                     </Link>
                                     <Link 
-                                        className="bg-blue-600 text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200" 
+                                        className="bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 shadow-lg" 
                                         to="/register"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
@@ -163,7 +163,7 @@ const Layout = () => {
             </nav>
             
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 ">
                 <div className="px-4 py-6 sm:px-0">
                     <Outlet />
                 </div>

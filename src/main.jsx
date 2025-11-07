@@ -1,15 +1,18 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import './index.css'
-import App from './App.js'
-import Layout from './pages/Layout.tsx'
-import About from './pages/About.tsx'
-import Contact from './pages/Contact.tsx'
-import Login from './pages/Login.tsx'
-import Register from './pages/Register.tsx'
-import { AuthProvider } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import "./index.css";
+import App from "./App.js";
+import Layout from "./pages/Layout.tsx";
+import About from "./pages/About.tsx";
+import Contact from "./pages/Contact.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
+import Create from "./pages/dashboard/Create.tsx";
+import DashboardLayout from "./pages/dashboard/Layout.tsx";
 
 const router = createBrowserRouter([
   {
@@ -41,14 +44,33 @@ const router = createBrowserRouter([
         Component: Register,
         errorElement: <div>Error</div>,
       },
+      {
+        path: "dashboard",
+        element: (
+          <ProtectedRoute>
+            <DashboardLayout /> 
+          </ProtectedRoute>
+        ),
+        errorElement: <div>Error</div>,
+        children: [
+          {
+            index: true,
+            Component: UserDashboard,
+          },
+          {
+            path: "create",
+            Component: Create,
+          },
+        ],
+      },
     ],
   },
-])
+]);
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
       <RouterProvider router={router} />
     </AuthProvider>
-  </StrictMode>,
-)
+  </StrictMode>
+);
