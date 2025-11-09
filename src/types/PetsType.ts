@@ -1,16 +1,16 @@
 interface IPets {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   birthDate: string;
   gender: string;
   breed: string;
   isCastrated: boolean;
-  ownerId: string;
+  owner: string;
   isActive: boolean;
-  photos: string[];
-  medicalInformation: string;
-  temperament: string;
+  photos?: string[];
+  medicalInformation?: string;
+  temperament?: string;
   createdAt: Date;
   updatedAt: Date;
 }

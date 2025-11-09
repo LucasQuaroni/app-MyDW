@@ -1,8 +1,36 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { api } from "../../config/axios";
+import IPets from "../../types/PetsType";
+
+import { DogIcon } from "lucide-react";
 
 const UserDashboard = () => {
   const { currentUser } = useAuth();
+  const [pets, setPets] = useState<IPets[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPets = async () => {
+      if (!currentUser?.uid) return;
+
+      try {
+        setLoading(true);
+        const response = await api.get(`/pets/owner/${currentUser.uid}`);
+        setPets(response.data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching pets:", err);
+        setError("Error al cargar las mascotas");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPets();
+  }, [currentUser]);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -10,7 +38,10 @@ const UserDashboard = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-100 mb-2">Dashboard</h1>
         <p className="text-gray-400">
-          Bienvenido, <span className="text-orange-500 font-semibold">{currentUser?.email}</span>
+          Bienvenido,{" "}
+          <span className="text-orange-500 font-semibold">
+            {currentUser?.email}
+          </span>
         </p>
       </div>
 
@@ -18,17 +49,29 @@ const UserDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-100">Mis Mascotas</h3>
+            <h3 className="text-xl font-semibold text-gray-100">
+              Mis Mascotas
+            </h3>
             <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <svg
+                className="w-6 h-6 text-orange-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
             </div>
           </div>
           <p className="text-gray-400 text-sm mb-4">
             Registra y gestiona la información de tus mascotas
           </p>
-          <Link 
+          <Link
             to="/dashboard/create"
             className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-orange-500 transition-all shadow-md hover:shadow-lg"
           >
@@ -38,27 +81,64 @@ const UserDashboard = () => {
 
         <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-100">Estadísticas</h3>
+            <h3 className="text-xl font-semibold text-gray-100">
+              Estadísticas
+            </h3>
             <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <svg
+                className="w-6 h-6 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
               </svg>
             </div>
           </div>
           <p className="text-gray-400 text-sm mb-2">
-            Total de mascotas: <span className="text-gray-100 font-semibold">0</span>
+            Total de mascotas:{" "}
+            <span className="text-gray-100 font-semibold">{pets.length}</span>
           </p>
           <p className="text-gray-400 text-sm">
-            Registradas este mes: <span className="text-gray-100 font-semibold">0</span>
+            Registradas este mes:{" "}
+            <span className="text-gray-100 font-semibold">
+              {
+                pets.filter((pet) => {
+                  const petDate = new Date(pet.createdAt);
+                  const now = new Date();
+                  return (
+                    petDate.getMonth() === now.getMonth() &&
+                    petDate.getFullYear() === now.getFullYear()
+                  );
+                }).length
+              }
+            </span>
           </p>
         </div>
 
         <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-100">Recordatorios</h3>
+            <h3 className="text-xl font-semibold text-gray-100">
+              Recordatorios
+            </h3>
             <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              <svg
+                className="w-6 h-6 text-purple-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
               </svg>
             </div>
           </div>
@@ -70,24 +150,120 @@ const UserDashboard = () => {
 
       {/* Recent Pets Section */}
       <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-md">
-        <h2 className="text-2xl font-bold text-gray-100 mb-4">Mascotas Recientes</h2>
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
+        <h2 className="text-2xl font-bold text-gray-100 mb-4">
+          Mascotas Recientes
+        </h2>
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <svg
+                className="w-8 h-8 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </div>
+            <p className="text-gray-400">Cargando mascotas...</p>
           </div>
-          <p className="text-gray-400 mb-4">Aún no has registrado ninguna mascota</p>
-          <Link 
-            to="/dashboard/create"
-            className="inline-flex items-center text-orange-500 hover:text-orange-400 font-semibold transition-colors"
-          >
-            Registrar primera mascota
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-        </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <p className="text-red-400">{error}</p>
+          </div>
+        ) : pets.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                />
+              </svg>
+            </div>
+            <p className="text-gray-400 mb-4">
+              Aún no has registrado ninguna mascota
+            </p>
+            <Link
+              to="/dashboard/create"
+              className="inline-flex items-center text-orange-500 hover:text-orange-400 font-semibold transition-colors"
+            >
+              Registrar primera mascota
+              <svg
+                className="w-5 h-5 ml-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pets.slice(0, 6).map((pet) => (
+              <div
+                key={pet._id}
+                className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-colors"
+              >
+                {pet.photos && pet.photos.length > 0 ? (
+                  <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 overflow-hidden">
+                    <img
+                      src={pet.photos[0]}
+                      alt={pet.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 flex items-center justify-center">
+                    <DogIcon className="w-10 h-10 text-gray-500" />
+                  </div>
+                )}
+                <h3 className="text-lg font-semibold text-gray-100 mb-1">
+                  {pet.name}
+                </h3>
+                <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>{pet.gender === "male" ? "Macho" : "Hembra"}</span>
+                  <span>{new Date(pet.birthDate).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
