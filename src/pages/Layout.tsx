@@ -1,19 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import { logoutUser, observeUser } from "../features/auth/authSlice";
 
 const Layout = () => {
-  const { currentUser, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Initialize Firebase auth observer when Layout mounts
+  useEffect(() => {
+    const setupObserver = async () => {
+      await dispatch(observeUser());
+    };
+    setupObserver();
+  }, [dispatch]);
+
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
+    await dispatch(logoutUser()).unwrap();
+    navigate("/");
   };
 
   return (
@@ -57,10 +63,10 @@ const Layout = () => {
                 </Link>
 
                 {/* Auth buttons */}
-                {currentUser ? (
+                {user ? (
                   <>
                     <span className="text-gray-400 px-3 py-2 text-sm">
-                      {currentUser.email}
+                      {user.email}
                     </span>
                     <button
                       onClick={handleLogout}
@@ -146,10 +152,10 @@ const Layout = () => {
               </Link>
 
               {/* Auth buttons mobile */}
-              {currentUser ? (
+              {user ? (
                 <>
                   <div className="px-3 py-2 text-sm text-gray-400">
-                    {currentUser.email}
+                    {user.email}
                   </div>
                   <button
                     onClick={() => {

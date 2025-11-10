@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api } from "../../config/axios";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAppSelector } from "../../hooks/redux";
 
 const Create = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const Create = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { currentUser } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
 
   const redirectTo = (location.state as any)?.redirectTo;
   const fromTagActivation = (location.state as any)?.fromTagActivation;
@@ -48,7 +48,7 @@ const Create = () => {
 
     try {
       const petData = {
-        ownerId: currentUser?.uid,
+        ownerId: user?.uid,
         ...formData,
         photos: formData.photos
           ? formData.photos.split(",").map((url) => url.trim())

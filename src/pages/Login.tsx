@@ -1,45 +1,62 @@
-import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useForm } from "react-hook-form";
+import { joiResolver } from "@hookform/resolvers/joi";
+import Joi from "joi";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import { loginUser, loginWithGoogle } from "../features/auth/authSlice";
+
+const loginSchema = Joi.object({
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .required()
+    .messages({
+      "string.empty": "El correo electrónico es requerido",
+      "string.email": "Debe ser un correo electrónico válido",
+    }),
+  password: Joi.string().min(6).required().messages({
+    "string.empty": "La contraseña es requerida",
+    "string.min": "La contraseña debe tener al menos 6 caracteres",
+  }),
+});
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Obtener la ruta de redirección desde el state o usar /dashboard por defecto
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector((state) => state.auth);
+
   const redirectTo = (location.state as any)?.redirectTo || "/dashboard";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: joiResolver(loginSchema),
+    mode: "onBlur",
+  });
 
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(email, password);
+      await dispatch(loginUser(data)).unwrap();
       navigate(redirectTo);
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Login failed:", err);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
-    setLoading(true);
-
     try {
-      await loginWithGoogle();
+      await dispatch(loginWithGoogle()).unwrap();
       navigate(redirectTo);
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión con Google");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Google login failed:", err);
     }
   };
 
@@ -63,7 +80,7 @@ const Login = () => {
 
         {/* Formulario */}
         <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {error && (
               <div
                 className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-2.5 rounded-2xl text-sm"
@@ -74,6 +91,7 @@ const Login = () => {
             )}
 
             <div className="space-y-3.5">
+              {/* Email Field */}
               <div>
                 <label
                   htmlFor="email"
@@ -83,17 +101,26 @@ const Login = () => {
                 </label>
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  {...register("email")}
+                  className={`w-full px-4 py-2.5 bg-gray-900 border ${
+                    errors.email ? "border-red-500" : "border-gray-700"
+                  } rounded-xl focus:outline-none focus:ring-2 ${
+                    errors.email
+                      ? "focus:ring-red-500"
+                      : "focus:ring-orange-500"
+                  } focus:border-transparent transition-all text-gray-100 placeholder-gray-500`}
                   placeholder="tunombre@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                 />
+                {errors.email && (
+                  <p className="mt-1.5 text-sm text-red-400">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
 
+              {/* Password Field */}
               <div>
                 <label
                   htmlFor="password"
@@ -103,15 +130,23 @@ const Login = () => {
                 </label>
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="current-password"
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  {...register("password")}
+                  className={`w-full px-4 py-2.5 bg-gray-900 border ${
+                    errors.password ? "border-red-500" : "border-gray-700"
+                  } rounded-xl focus:outline-none focus:ring-2 ${
+                    errors.password
+                      ? "focus:ring-red-500"
+                      : "focus:ring-orange-500"
+                  } focus:border-transparent transition-all text-gray-100 placeholder-gray-500`}
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                 />
+                {errors.password && (
+                  <p className="mt-1.5 text-sm text-red-400">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
             </div>
 

@@ -1,55 +1,69 @@
-import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useForm } from "react-hook-form";
+import { joiResolver } from "@hookform/resolvers/joi";
+import Joi from "joi";
+import { loginWithGoogle, registerUser } from "../features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
+
+const registerSchema = Joi.object({
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .required()
+    .messages({
+      "string.empty": "El correo electrónico es requerido",
+      "string.email": "Debe ser un correo electrónico válido",
+    }),
+  password: Joi.string().min(6).required().messages({
+    "string.empty": "La contraseña es requerida",
+    "string.min": "La contraseña debe tener al menos 6 caracteres",
+  }),
+  confirmPassword: Joi.string().valid(Joi.ref("password")).required().messages({
+    "string.empty": "Debes confirmar tu contraseña",
+    "any.only": "Las contraseñas no coinciden",
+  }),
+});
+
+interface RegisterFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 const Register = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { register, loginWithGoogle } = useAuth();
+  const { loading, error } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Obtener la ruta de redirección desde el state o usar /dashboard por defecto
   const redirectTo = (location.state as any)?.redirectTo || "/dashboard";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: joiResolver(registerSchema),
+    mode: "onBlur", // Validate on blur
+  });
 
-    if (password !== confirmPassword) {
-      return setError("Las contraseñas no coinciden");
-    }
-
-    if (password.length < 6) {
-      return setError("La contraseña debe tener al menos 6 caracteres");
-    }
-
-    setLoading(true);
-
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      await register(email, password);
+      await dispatch(
+        registerUser({ email: data.email, password: data.password })
+      ).unwrap();
       navigate(redirectTo);
-    } catch (err: any) {
-      setError(err.message || "Error al crear la cuenta");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Registration failed:", err);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
-    setLoading(true);
-
     try {
-      await loginWithGoogle();
+      await dispatch(loginWithGoogle()).unwrap();
       navigate(redirectTo);
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión con Google");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Google login failed:", err);
     }
   };
 
@@ -75,7 +89,8 @@ const Register = () => {
 
         {/* Formulario */}
         <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            {/* Redux error (authentication error) */}
             {error && (
               <div
                 className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-2.5 rounded-2xl text-sm"
@@ -86,6 +101,7 @@ const Register = () => {
             )}
 
             <div className="space-y-3.5">
+              {/* Email Field */}
               <div>
                 <label
                   htmlFor="email"
@@ -95,17 +111,26 @@ const Register = () => {
                 </label>
                 <input
                   id="email"
-                  name="email"
                   type="email"
                   autoComplete="email"
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  {...register("email")}
+                  className={`w-full px-4 py-2.5 bg-gray-900 border ${
+                    errors.email ? "border-red-500" : "border-gray-700"
+                  } rounded-xl focus:outline-none focus:ring-2 ${
+                    errors.email
+                      ? "focus:ring-red-500"
+                      : "focus:ring-orange-500"
+                  } focus:border-transparent transition-all text-gray-100 placeholder-gray-500`}
                   placeholder="tu@ejemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                 />
+                {errors.email && (
+                  <p className="mt-1.5 text-sm text-red-400">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
 
+              {/* Password Field */}
               <div>
                 <label
                   htmlFor="password"
@@ -115,17 +140,26 @@ const Register = () => {
                 </label>
                 <input
                   id="password"
-                  name="password"
                   type="password"
                   autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  {...register("password")}
+                  className={`w-full px-4 py-2.5 bg-gray-900 border ${
+                    errors.password ? "border-red-500" : "border-gray-700"
+                  } rounded-xl focus:outline-none focus:ring-2 ${
+                    errors.password
+                      ? "focus:ring-red-500"
+                      : "focus:ring-orange-500"
+                  } focus:border-transparent transition-all text-gray-100 placeholder-gray-500`}
                   placeholder="Mínimo 6 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                 />
+                {errors.password && (
+                  <p className="mt-1.5 text-sm text-red-400">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
 
+              {/* Confirm Password Field */}
               <div>
                 <label
                   htmlFor="confirmPassword"
@@ -135,15 +169,25 @@ const Register = () => {
                 </label>
                 <input
                   id="confirmPassword"
-                  name="confirmPassword"
                   type="password"
                   autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  {...register("confirmPassword")}
+                  className={`w-full px-4 py-2.5 bg-gray-900 border ${
+                    errors.confirmPassword
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  } rounded-xl focus:outline-none focus:ring-2 ${
+                    errors.confirmPassword
+                      ? "focus:ring-red-500"
+                      : "focus:ring-orange-500"
+                  } focus:border-transparent transition-all text-gray-100 placeholder-gray-500`}
                   placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+                {errors.confirmPassword && (
+                  <p className="mt-1.5 text-sm text-red-400">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
             </div>
 

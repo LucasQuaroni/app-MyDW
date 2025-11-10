@@ -1,24 +1,25 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { api } from "../../config/axios";
 import IPets from "../../types/PetsType";
 
 import { DogIcon } from "lucide-react";
+import { useAppSelector } from "../../hooks/redux";
+import { selectUser } from "../../features/auth/authSlice";
 
 const UserDashboard = () => {
-  const { currentUser } = useAuth();
+  const user = useAppSelector(selectUser);
   const [pets, setPets] = useState<IPets[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPets = async () => {
-      if (!currentUser?.uid) return;
+      if (!user?.uid) return;
 
       try {
         setLoading(true);
-        const response = await api.get(`/pets/owner/${currentUser.uid}`);
+        const response = await api.get(`/pets/owner/${user.uid}`);
         setPets(response.data);
         setError(null);
       } catch (err) {
@@ -30,7 +31,7 @@ const UserDashboard = () => {
     };
 
     fetchPets();
-  }, [currentUser]);
+  }, [user]);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -39,9 +40,7 @@ const UserDashboard = () => {
         <h1 className="text-3xl font-bold text-gray-100 mb-2">Dashboard</h1>
         <p className="text-gray-400">
           Bienvenido,{" "}
-          <span className="text-orange-500 font-semibold">
-            {currentUser?.email}
-          </span>
+          <span className="text-orange-500 font-semibold">{user?.email}</span>
         </p>
       </div>
 

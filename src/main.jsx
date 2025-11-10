@@ -8,13 +8,14 @@ import About from "./pages/About.tsx";
 import Contact from "./pages/Contact.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
-import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
 import Create from "./pages/dashboard/Create.tsx";
 import DashboardLayout from "./pages/dashboard/Layout.tsx";
 import PublicPetProfile from "./pages/pet/PublicPetProfile.tsx";
 import TagGenerator from "./pages/admin/TagGenerator.tsx";
+import { store } from "./store/store.ts";
+import { Provider } from "react-redux";
 
 const router = createBrowserRouter([
   {
@@ -81,8 +82,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <AuthProvider>
+    <Provider store={store}>
       <RouterProvider router={router} />
-    </AuthProvider>
+    </Provider>
   </StrictMode>
 );

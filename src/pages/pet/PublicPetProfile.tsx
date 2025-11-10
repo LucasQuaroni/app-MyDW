@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { api } from "../../config/axios";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAppSelector } from "../../hooks/redux";
 import { TagInfo } from "../../types/PetsType";
 import IPets from "../../types/PetsType";
 
 const PetQRPage = () => {
   const { id: tagId } = useParams<{ id: string }>();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
   const [tagInfo, setTagInfo] = useState<TagInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,7 +18,7 @@ const PetQRPage = () => {
 
   useEffect(() => {
     fetchTagInfo();
-  }, [tagId, currentUser]); // Re-fetch si el usuario inicia sesión
+  }, [tagId, user]); // Re-fetch si el usuario inicia sesión
 
   const fetchTagInfo = async () => {
     try {
@@ -27,7 +27,7 @@ const PetQRPage = () => {
       setTagInfo(response.data);
 
       // if can activate, load user pets
-      if (response.data.canActivate && currentUser) {
+      if (response.data.canActivate && user) {
         fetchUserPets();
       }
     } catch (err: any) {
@@ -39,7 +39,7 @@ const PetQRPage = () => {
 
   const fetchUserPets = async () => {
     try {
-      const response = await api.get(`/pets?ownerId=${currentUser?.uid}`);
+      const response = await api.get(`/pets?ownerId=${user?.uid}`);
       // pets without associated tag
       const availablePets = response.data.filter((pet: IPets) => !pet.tagId);
       setPets(availablePets);

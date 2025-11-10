@@ -2,7 +2,7 @@ import axios from "axios";
 import { auth } from "../firebase/config";
 
 const api = axios.create({
-  baseURL: "http://localhost:3019/api",
+  baseURL: "https://app-my-dw.vercel.app/api",
 });
 
 api.interceptors.request.use(
