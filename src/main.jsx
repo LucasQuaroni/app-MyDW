@@ -14,6 +14,7 @@ import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
 import Create from "./pages/dashboard/Create.tsx";
 import DashboardLayout from "./pages/dashboard/Layout.tsx";
 import PublicPetProfile from "./pages/pet/PublicPetProfile.tsx";
+import TagGenerator from "./pages/admin/TagGenerator.tsx";
 
 const router = createBrowserRouter([
   {
@@ -67,6 +68,11 @@ const router = createBrowserRouter([
       {
         path: "pet/:id",
         Component: PublicPetProfile,
+        errorElement: <div>Error</div>,
+      },
+      {
+        path: "admin/tags",
+        Component: TagGenerator,
         errorElement: <div>Error</div>,
       },
     ],

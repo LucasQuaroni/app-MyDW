@@ -133,7 +133,7 @@ const PetQRPage = () => {
   // CASO 2: Chapita NO activada - Usuario SÍ logueado
   if (!tagInfo.isActivated && tagInfo.canActivate) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-gray-800 border border-gray-700 rounded-3xl p-8 max-w-md w-full">
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">✨</div>

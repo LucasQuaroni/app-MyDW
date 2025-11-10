@@ -49,6 +49,12 @@ const Layout = () => {
                 >
                   Contact
                 </Link>
+                <Link
+                  className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                  to="/admin/tags"
+                >
+                  🏷️ Admin Tags
+                </Link>
 
                 {/* Auth buttons */}
                 {currentUser ? (
@@ -130,6 +136,13 @@ const Layout = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
+              </Link>
+              <Link
+                className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                to="/admin/tags"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                🏷️ Admin Tags
               </Link>
 
               {/* Auth buttons mobile */}
