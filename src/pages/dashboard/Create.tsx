@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api } from "../../config/axios";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Create = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { currentUser } = useAuth();
-  // Form state
+
+  const redirectTo = (location.state as any)?.redirectTo;
+  const fromTagActivation = (location.state as any)?.fromTagActivation;
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -43,11 +47,9 @@ const Create = () => {
     setLoading(true);
 
     try {
-      // Preparar datos para enviar
       const petData = {
         ownerId: currentUser?.uid,
         ...formData,
-        // Convertir el string de fotos a array si hay contenido
         photos: formData.photos
           ? formData.photos.split(",").map((url) => url.trim())
           : [],
@@ -55,10 +57,15 @@ const Create = () => {
 
       const response = await api.post("/pets", petData);
       if (response.data) {
-        setSuccess("¡Mascota registrada exitosamente!");
+        if (fromTagActivation) {
+          setSuccess(
+            "¡Mascota registrada! Redirigiendo para activar tu chapita..."
+          );
+        } else {
+          setSuccess("¡Mascota registrada exitosamente!");
+        }
       }
 
-      // Limpiar formulario
       setFormData({
         name: "",
         description: "",
@@ -71,9 +78,12 @@ const Create = () => {
         temperament: "",
       });
 
-      // Redirigir al dashboard después de 2 segundos
       setTimeout(() => {
-        navigate("/dashboard");
+        if (fromTagActivation && redirectTo) {
+          navigate(redirectTo);
+        } else {
+          navigate("/dashboard");
+        }
       }, 2000);
     } catch (err: any) {
       setError(err.message || "Error al registrar la mascota");
@@ -88,7 +98,7 @@ const Create = () => {
       {/* Header */}
       <div className="mb-6">
         <Link
-          to="/dashboard"
+          to={fromTagActivation && redirectTo ? redirectTo : "/dashboard"}
           className="inline-flex items-center text-gray-400 hover:text-orange-500 transition-colors mb-4"
         >
           <svg
@@ -104,7 +114,7 @@ const Create = () => {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          Volver al Dashboard
+          {fromTagActivation ? "Volver a Activación" : "Volver al Dashboard"}
         </Link>
         <h1 className="text-3xl font-bold text-gray-100 mb-2">
           Registrar Nueva Mascota
@@ -113,6 +123,24 @@ const Create = () => {
           Completa el formulario para agregar una mascota a tu registro
         </p>
       </div>
+
+      {/* Banner de activación de chapita */}
+      {fromTagActivation && (
+        <div className="bg-orange-900/20 border border-orange-700 rounded-2xl p-4 mb-6">
+          <div className="flex items-start">
+            <div className="text-2xl mr-3">🏷️</div>
+            <div>
+              <h3 className="text-orange-400 font-semibold mb-1">
+                Activación de Chapita
+              </h3>
+              <p className="text-gray-300 text-sm">
+                Una vez que registres tu mascota, podrás asociarla a tu chapita
+                automáticamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Formulario */}
       <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
@@ -335,7 +363,11 @@ const Create = () => {
           <div className="flex gap-4 pt-2">
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate(
+                  fromTagActivation && redirectTo ? redirectTo : "/dashboard"
+                )
+              }
               className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border-2 border-gray-700 text-gray-300 hover:bg-gray-700 hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-gray-600 transition-all"
             >
               Cancelar

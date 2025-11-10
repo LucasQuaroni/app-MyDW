@@ -1,39 +1,43 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useState } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Obtener la ruta de redirección desde el state o usar /dashboard por defecto
+  const redirectTo = (location.state as any)?.redirectTo || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      setError(err.message || "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión con Google');
+      setError(err.message || "Error al iniciar sesión con Google");
     } finally {
       setLoading(false);
     }
@@ -46,33 +50,35 @@ const Login = () => {
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-gray-800 rounded-2xl shadow-lg p-3 flex items-center justify-center border border-gray-700">
-              <img 
-                src="/Logo.svg" 
-                alt="Logo" 
+              <img
+                src="/Logo.svg"
+                alt="Logo"
                 className="w-full h-full object-contain brightness-0 invert"
               />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-100 mb-1">
-            Bienvenido
-          </h2>
-          <p className="text-gray-400 text-sm">
-            Inicia sesión para continuar
-          </p>
+          <h2 className="text-2xl font-bold text-gray-100 mb-1">Bienvenido</h2>
+          <p className="text-gray-400 text-sm">Inicia sesión para continuar</p>
         </div>
 
         {/* Formulario */}
         <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-2.5 rounded-2xl text-sm" role="alert">
+              <div
+                className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-2.5 rounded-2xl text-sm"
+                role="alert"
+              >
                 <span className="block">{error}</span>
               </div>
             )}
 
             <div className="space-y-3.5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                >
                   Correo electrónico
                 </label>
                 <input
@@ -89,7 +95,10 @@ const Login = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                >
                   Contraseña
                 </label>
                 <input
@@ -112,7 +121,7 @@ const Login = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10 hover:border-orange-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                {loading ? "Iniciando sesión..." : "Iniciar sesión"}
               </button>
             </div>
 
@@ -121,7 +130,9 @@ const Login = () => {
                 <div className="w-full border-t border-gray-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-gray-800 text-gray-400">O continúa con</span>
+                <span className="px-4 bg-gray-800 text-gray-400">
+                  O continúa con
+                </span>
               </div>
             </div>
 
@@ -154,8 +165,12 @@ const Login = () => {
 
             <div className="text-center pt-3">
               <p className="text-sm text-gray-400">
-                ¿No tienes una cuenta?{' '}
-                <Link to="/register" className="font-semibold text-orange-500 hover:text-orange-400 transition-colors">
+                ¿No tienes una cuenta?{" "}
+                <Link
+                  to="/register"
+                  state={{ redirectTo }}
+                  className="font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                >
                   Regístrate
                 </Link>
               </p>
@@ -168,4 +183,3 @@ const Login = () => {
 };
 
 export default Login;
-
