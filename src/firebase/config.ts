@@ -4,6 +4,7 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 /**
  * Configuración de Firebase para el cliente (frontend)
@@ -40,5 +41,8 @@ export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error("Error setting persistence:", error);
 });
+
+// Inicializar Storage
+export const storage = getStorage(app);
 
 export default app;

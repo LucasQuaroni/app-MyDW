@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api } from "../../config/axios";
 import { useAppSelector } from "../../hooks/redux";
+import { ImageUpload } from "../../components/ImageUpload";
+
+const FORM_STORAGE_KEY = "pet-registration-form-draft";
+const SESSION_FLAG_KEY = "pet-registration-session-active";
 
 const Create = () => {
   const navigate = useNavigate();
@@ -14,17 +18,79 @@ const Create = () => {
   const redirectTo = (location.state as any)?.redirectTo;
   const fromTagActivation = (location.state as any)?.fromTagActivation;
 
+  // Load saved form data from localStorage on mount
+  const loadSavedFormData = () => {
+    try {
+      const saved = localStorage.getItem(FORM_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed;
+      }
+    } catch (error) {
+      console.error("Error loading saved form data:", error);
+    }
+    return null;
+  };
+
+  const savedData = loadSavedFormData();
+
+  // Detect if user is returning (has saved data but hasn't started editing in this mount)
+  // Using useRef to track if user has made changes in THIS component mount
+  const hasUserEditedInThisSession = useRef(false);
+
+  // Use state so it triggers re-render when detected
+  const [isReturningSession, setIsReturningSession] = useState(false);
+
+  // Check on mount: if there's saved data and no active editing session flag
+  useEffect(() => {
+    const hasActiveSession = sessionStorage.getItem(SESSION_FLAG_KEY);
+
+    if (savedData && !hasActiveSession) {
+      // User is returning - there's saved data but no active session
+      setIsReturningSession(true);
+    }
+  }, []); // Only run once on mount
+
+  // State for uploaded photo URLs
+  const [photoUrls, setPhotoUrls] = useState<string[]>(
+    savedData?.photoUrls || []
+  );
+
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    birthDate: "",
-    gender: "",
-    breed: "",
-    isCastrated: false,
-    photos: "",
-    medicalInformation: "",
-    temperament: "",
+    name: savedData?.formData?.name || "",
+    description: savedData?.formData?.description || "",
+    birthDate: savedData?.formData?.birthDate || "",
+    gender: savedData?.formData?.gender || "",
+    breed: savedData?.formData?.breed || "",
+    isCastrated: savedData?.formData?.isCastrated || false,
+    medicalInformation: savedData?.formData?.medicalInformation || "",
+    temperament: savedData?.formData?.temperament || "",
   });
+
+  // Save form data to localStorage whenever it changes (only if there's actual data)
+  useEffect(() => {
+    // Check if there's any meaningful data to save
+    const hasFormData =
+      formData.name ||
+      formData.description ||
+      formData.birthDate ||
+      formData.gender ||
+      formData.breed ||
+      formData.medicalInformation ||
+      formData.temperament;
+
+    const hasPhotos = photoUrls.length > 0;
+
+    // Only save if there's actual data
+    if (hasFormData || hasPhotos) {
+      const dataToSave = {
+        formData,
+        photoUrls,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+  }, [formData, photoUrls]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -34,10 +100,75 @@ const Create = () => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
+    // Mark session as active on first edit
+    if (!hasUserEditedInThisSession.current) {
+      hasUserEditedInThisSession.current = true;
+      sessionStorage.setItem(SESSION_FLAG_KEY, "true");
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // Handle image upload callback
+  const handleImageUploaded = (url: string) => {
+    // Mark session as active on image upload
+    if (!hasUserEditedInThisSession.current) {
+      hasUserEditedInThisSession.current = true;
+      sessionStorage.setItem(SESSION_FLAG_KEY, "true");
+    }
+
+    setPhotoUrls((prev) => [...prev, url]);
+  };
+
+  // Clear draft manually
+  const clearDraft = () => {
+    if (
+      window.confirm(
+        "¿Estás seguro de que deseas limpiar el borrador? Se perderán todos los datos del formulario."
+      )
+    ) {
+      setFormData({
+        name: "",
+        description: "",
+        birthDate: "",
+        gender: "",
+        breed: "",
+        isCastrated: false,
+        medicalInformation: "",
+        temperament: "",
+      });
+      setPhotoUrls([]);
+      localStorage.removeItem(FORM_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_FLAG_KEY);
+      // Clear flags
+      setIsReturningSession(false);
+      hasUserEditedInThisSession.current = false;
+    }
+  };
+
+  // Check if we should show the "Draft Restored" banner
+  // Only show if: 1) there's saved data, 2) it has content, 3) user is returning (not same session)
+  const shouldShowRestoredBanner = () => {
+    if (!savedData || !isReturningSession) return false;
+
+    const { formData: saved, photoUrls: savedPhotos } = savedData;
+
+    // Check if any field has meaningful data
+    const hasFormData =
+      saved?.name ||
+      saved?.description ||
+      saved?.birthDate ||
+      saved?.gender ||
+      saved?.breed ||
+      saved?.medicalInformation ||
+      saved?.temperament;
+
+    const hasPhotos = savedPhotos && savedPhotos.length > 0;
+
+    return hasFormData || hasPhotos;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,9 +181,7 @@ const Create = () => {
       const petData = {
         ownerId: user?.uid,
         ...formData,
-        photos: formData.photos
-          ? formData.photos.split(",").map((url) => url.trim())
-          : [],
+        photos: photoUrls, // Use uploaded photo URLs
       };
 
       const response = await api.post("/pets", petData);
@@ -66,6 +195,7 @@ const Create = () => {
         }
       }
 
+      // Clear form and localStorage
       setFormData({
         name: "",
         description: "",
@@ -73,10 +203,12 @@ const Create = () => {
         gender: "",
         breed: "",
         isCastrated: false,
-        photos: "",
         medicalInformation: "",
         temperament: "",
       });
+      setPhotoUrls([]); // Reset photo URLs
+      localStorage.removeItem(FORM_STORAGE_KEY); // Clear saved draft
+      sessionStorage.removeItem(SESSION_FLAG_KEY); // Clear session flag
 
       setTimeout(() => {
         if (fromTagActivation && redirectTo) {
@@ -123,6 +255,34 @@ const Create = () => {
           Completa el formulario para agregar una mascota a tu registro
         </p>
       </div>
+
+      {/* Banner de borrador restaurado */}
+      {shouldShowRestoredBanner() && (
+        <div className="bg-blue-900/20 border border-blue-700 rounded-2xl p-4 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <div className="text-2xl mr-3">💾</div>
+              <div>
+                <h3 className="text-blue-400 font-semibold mb-1">
+                  Borrador Restaurado
+                </h3>
+                <p className="text-gray-300 text-sm">
+                  Se han recuperado los datos que ingresaste anteriormente.
+                  Puedes continuar donde lo dejaste.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={clearDraft}
+              className="text-gray-400 hover:text-red-400 transition-colors ml-4 text-sm"
+              title="Limpiar borrador"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Banner de activación de chapita */}
       {fromTagActivation && (
@@ -336,27 +496,13 @@ const Create = () => {
               />
             </div>
 
-            {/* URLs de Fotos */}
-            <div>
-              <label
-                htmlFor="photos"
-                className="block text-sm font-medium text-gray-300 mb-1.5"
-              >
-                Fotos (URLs)
-              </label>
-              <textarea
-                id="photos"
-                name="photos"
-                rows={2}
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none"
-                placeholder="URLs de fotos separadas por comas: https://ejemplo.com/foto1.jpg, https://ejemplo.com/foto2.jpg"
-                value={formData.photos}
-                onChange={handleChange}
-              />
-              <p className="text-xs text-gray-500 mt-1.5">
-                Puedes agregar múltiples URLs de fotos separadas por comas
-              </p>
-            </div>
+            {/* Image Upload Component */}
+            <ImageUpload
+              onImageUploaded={handleImageUploaded}
+              petName={formData.name || "pet"}
+              maxImages={1}
+              currentImages={photoUrls}
+            />
           </div>
 
           {/* Botones */}
