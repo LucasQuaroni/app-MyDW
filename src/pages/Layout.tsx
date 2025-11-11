@@ -23,14 +23,25 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 font-elms">
       {/* Navbar */}
       <nav className="bg-gray-900 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center">
-                <h1 className="text-xl font-bold text-orange-500">E-Patitas</h1>
+              <Link to="/" className="group flex items-center gap-2">
+                <img
+                  src="/Logo.svg"
+                  alt="E-patitas Logo"
+                  className="h-8 w-8 -rotate-20 font-fauna group-hover:rotate-0 transition-transform duration-300 "
+                  style={{
+                    filter:
+                      "invert(57%) sepia(77%) saturate(2064%) hue-rotate(358deg) brightness(101%) contrast(103%)",
+                  }}
+                />
+                <h1 className="text-xl font-semibold text-white group-hover:text-orange-400 transition-colors duration-300">
+                  E-patitas{" "}
+                </h1>
               </Link>
             </div>
 
@@ -55,12 +66,16 @@ const Layout = () => {
                 >
                   Contact
                 </Link>
-                <Link
-                  className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                  to="/admin/tags"
-                >
-                  🏷️ Admin Tags
-                </Link>
+
+                {/* fix temporal para POC */}
+                {user?.email?.includes("admin") && (
+                  <Link
+                    className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                    to="/admin/tags"
+                  >
+                    🏷️ Admin Tags
+                  </Link>
+                )}
 
                 {/* Auth buttons */}
                 {user ? (

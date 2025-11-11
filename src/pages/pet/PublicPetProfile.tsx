@@ -15,9 +15,11 @@ const PetQRPage = () => {
   const [pets, setPets] = useState<IPets[]>([]);
   const [selectedPet, setSelectedPet] = useState("");
   const [activating, setActivating] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     fetchTagInfo();
+    setImageLoaded(false); // Reset image loaded state when tag changes
   }, [tagId, user]); // Re-fetch si el usuario inicia sesión
 
   const fetchTagInfo = async () => {
@@ -218,11 +220,25 @@ const PetQRPage = () => {
         <div className="max-w-2xl mx-auto bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-700">
           {/* Foto de la mascota */}
           {pet.photos && pet.photos.length > 0 && (
-            <div className="h-64 bg-gray-700">
+            <div className="h-64 bg-gray-700 relative overflow-hidden">
+              {/* Loading skeleton */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gray-700 animate-pulse flex items-center justify-center z-10">
+                  <div className="text-center">
+                    <div className="text-6xl mb-2">🐾</div>
+                    <p className="text-gray-500 text-sm">Cargando foto...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Actual image */}
               <img
                 src={pet.photos[0]}
                 alt={pet.name}
-                className="w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                style={{ opacity: imageLoaded ? 1 : 0 }}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageLoaded(true)} // Show content even if image fails
               />
             </div>
           )}
