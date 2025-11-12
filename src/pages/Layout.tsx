@@ -52,20 +52,24 @@ const Layout = () => {
                   className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                   to="/"
                 >
-                  Home
+                  Inicio
                 </Link>
-                <Link
-                  className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                  to="/about"
-                >
-                  About
-                </Link>
+
                 <Link
                   className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                   to="/contact"
                 >
-                  Contact
+                  Contacto
                 </Link>
+
+                {user && (
+                  <Link
+                    className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                    to="/dashboard"
+                  >
+                    Mis mascotas
+                  </Link>
+                )}
 
                 {/* fix temporal para POC */}
                 {user?.email?.includes("admin") && (
@@ -158,14 +162,15 @@ const Layout = () => {
               >
                 Contact
               </Link>
-              <Link
-                className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                to="/admin/tags"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                🏷️ Admin Tags
-              </Link>
-
+              {user?.email?.includes("admin") && (
+                <Link
+                  className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  to="/admin/tags"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  🏷️ Admin Tags
+                </Link>
+              )}
               {/* Auth buttons mobile */}
               {user ? (
                 <>
