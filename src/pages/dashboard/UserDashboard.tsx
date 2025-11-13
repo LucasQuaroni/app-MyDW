@@ -267,10 +267,14 @@ const UserDashboard = () => {
                     {pet.name}
                   </h3>
                   <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{pet.gender === "male" ? "Macho" : "Hembra"}</span>
-                    <span>{new Date(pet.birthDate).toLocaleDateString()}</span>
-                  </div>
+                  {pet?.gender && (
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="capitalize">{pet?.gender}</span>
+                      <span>
+                        {new Date(pet.birthDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>

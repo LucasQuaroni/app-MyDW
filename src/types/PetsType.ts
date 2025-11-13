@@ -34,7 +34,8 @@ export interface TagInfo {
     medicalInformation?: string;
   };
   owner?: {
-    name: string;
+    name?: string;
+    lastname?: string;
     phone: string;
     email: string;
   };
