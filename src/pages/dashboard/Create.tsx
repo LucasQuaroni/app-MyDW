@@ -1,11 +1,52 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { joiResolver } from "@hookform/resolvers/joi";
+import Joi from "joi";
 import { api } from "../../config/axios";
 import { useAppSelector } from "../../hooks/redux";
 import { ImageUpload } from "../../components/ImageUpload";
 
 const FORM_STORAGE_KEY = "pet-registration-form-draft";
 const SESSION_FLAG_KEY = "pet-registration-session-active";
+
+const petSchema = Joi.object({
+  name: Joi.string().required().messages({
+    "string.empty": "El nombre es requerido",
+    "any.required": "El nombre es requerido",
+  }),
+  description: Joi.string().required().messages({
+    "string.empty": "La descripción es requerida",
+    "any.required": "La descripción es requerida",
+  }),
+  birthDate: Joi.string().required().messages({
+    "string.empty": "La fecha de nacimiento es requerida",
+    "any.required": "La fecha de nacimiento es requerida",
+  }),
+  gender: Joi.string().valid("macho", "hembra").required().messages({
+    "string.empty": "El género es requerido",
+    "any.required": "El género es requerido",
+    "any.only": "Selecciona un género válido",
+  }),
+  breed: Joi.string().required().messages({
+    "string.empty": "La raza es requerida",
+    "any.required": "La raza es requerida",
+  }),
+  isCastrated: Joi.boolean().default(false),
+  medicalInformation: Joi.string().allow("", null).optional(),
+  temperament: Joi.string().allow("", null).optional(),
+});
+
+type PetFormData = {
+  name: string;
+  description: string;
+  birthDate: string;
+  gender: string;
+  breed: string;
+  isCastrated: boolean;
+  medicalInformation?: string;
+  temperament?: string;
+};
 
 const Create = () => {
   const navigate = useNavigate();
@@ -18,7 +59,6 @@ const Create = () => {
   const redirectTo = (location.state as any)?.redirectTo;
   const fromTagActivation = (location.state as any)?.fromTagActivation;
 
-  // Load saved form data from localStorage on mount
   const loadSavedFormData = () => {
     try {
       const saved = localStorage.getItem(FORM_STORAGE_KEY);
@@ -46,30 +86,37 @@ const Create = () => {
     const hasActiveSession = sessionStorage.getItem(SESSION_FLAG_KEY);
 
     if (savedData && !hasActiveSession) {
-      // User is returning - there's saved data but no active session
       setIsReturningSession(true);
     }
-  }, []); // Only run once on mount
+  }, []);
 
-  // State for uploaded photo URLs
   const [photoUrls, setPhotoUrls] = useState<string[]>(
     savedData?.photoUrls || []
   );
 
-  const [formData, setFormData] = useState({
-    name: savedData?.formData?.name || "",
-    description: savedData?.formData?.description || "",
-    birthDate: savedData?.formData?.birthDate || "",
-    gender: savedData?.formData?.gender || "",
-    breed: savedData?.formData?.breed || "",
-    isCastrated: savedData?.formData?.isCastrated || false,
-    medicalInformation: savedData?.formData?.medicalInformation || "",
-    temperament: savedData?.formData?.temperament || "",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<PetFormData>({
+    resolver: joiResolver(petSchema),
+    defaultValues: {
+      name: savedData?.formData?.name || "",
+      description: savedData?.formData?.description || "",
+      birthDate: savedData?.formData?.birthDate || "",
+      gender: savedData?.formData?.gender || "",
+      breed: savedData?.formData?.breed || "",
+      isCastrated: savedData?.formData?.isCastrated || false,
+      medicalInformation: savedData?.formData?.medicalInformation || "",
+      temperament: savedData?.formData?.temperament || "",
+    },
   });
 
-  // Save form data to localStorage whenever it changes (only if there's actual data)
+  const formData = watch();
+
   useEffect(() => {
-    // Check if there's any meaningful data to save
     const hasFormData =
       formData.name ||
       formData.description ||
@@ -81,7 +128,6 @@ const Create = () => {
 
     const hasPhotos = photoUrls.length > 0;
 
-    // Only save if there's actual data
     if (hasFormData || hasPhotos) {
       const dataToSave = {
         formData,
@@ -92,25 +138,15 @@ const Create = () => {
     }
   }, [formData, photoUrls]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-
-    // Mark session as active on first edit
-    if (!hasUserEditedInThisSession.current) {
-      hasUserEditedInThisSession.current = true;
-      sessionStorage.setItem(SESSION_FLAG_KEY, "true");
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (!hasUserEditedInThisSession.current) {
+        hasUserEditedInThisSession.current = true;
+        sessionStorage.setItem(SESSION_FLAG_KEY, "true");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   // Handle image upload callback
   const handleImageUploaded = (url: string) => {
@@ -130,7 +166,7 @@ const Create = () => {
         "¿Estás seguro de que deseas limpiar el borrador? Se perderán todos los datos del formulario."
       )
     ) {
-      setFormData({
+      reset({
         name: "",
         description: "",
         birthDate: "",
@@ -143,7 +179,6 @@ const Create = () => {
       setPhotoUrls([]);
       localStorage.removeItem(FORM_STORAGE_KEY);
       sessionStorage.removeItem(SESSION_FLAG_KEY);
-      // Clear flags
       setIsReturningSession(false);
       hasUserEditedInThisSession.current = false;
     }
@@ -171,18 +206,29 @@ const Create = () => {
     return hasFormData || hasPhotos;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: PetFormData) => {
     setError("");
     setSuccess("");
     setLoading(true);
 
     try {
-      const petData = {
+      const petData: any = {
         ownerId: user?.uid,
-        ...formData,
-        photos: photoUrls, // Use uploaded photo URLs
+        name: data.name,
+        description: data.description,
+        birthDate: data.birthDate,
+        gender: data.gender,
+        breed: data.breed,
+        isCastrated: data.isCastrated,
+        photos: photoUrls,
       };
+
+      if (data.medicalInformation && data.medicalInformation.trim()) {
+        petData.medicalInformation = data.medicalInformation;
+      }
+      if (data.temperament && data.temperament.trim()) {
+        petData.temperament = data.temperament;
+      }
 
       const response = await api.post("/pets", petData);
       if (response.data) {
@@ -195,8 +241,7 @@ const Create = () => {
         }
       }
 
-      // Clear form and localStorage
-      setFormData({
+      reset({
         name: "",
         description: "",
         birthDate: "",
@@ -206,9 +251,9 @@ const Create = () => {
         medicalInformation: "",
         temperament: "",
       });
-      setPhotoUrls([]); // Reset photo URLs
-      localStorage.removeItem(FORM_STORAGE_KEY); // Clear saved draft
-      sessionStorage.removeItem(SESSION_FLAG_KEY); // Clear session flag
+      setPhotoUrls([]);
+      localStorage.removeItem(FORM_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_FLAG_KEY);
 
       setTimeout(() => {
         if (fromTagActivation && redirectTo) {
@@ -227,7 +272,6 @@ const Create = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
       <div className="mb-6">
         <Link
           to={fromTagActivation && redirectTo ? redirectTo : "/dashboard"}
@@ -256,7 +300,6 @@ const Create = () => {
         </p>
       </div>
 
-      {/* Banner de borrador restaurado */}
       {shouldShowRestoredBanner() && (
         <div className="bg-blue-900/20 border border-blue-700 rounded-2xl p-4 mb-6">
           <div className="flex items-start justify-between">
@@ -284,7 +327,6 @@ const Create = () => {
         </div>
       )}
 
-      {/* Banner de activación de chapita */}
       {fromTagActivation && (
         <div className="bg-orange-900/20 border border-orange-700 rounded-2xl p-4 mb-6">
           <div className="flex items-start">
@@ -302,10 +344,8 @@ const Create = () => {
         </div>
       )}
 
-      {/* Formulario */}
       <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Mensajes de error/éxito */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <div
               className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded-2xl text-sm"
@@ -324,14 +364,12 @@ const Create = () => {
             </div>
           )}
 
-          {/* Información Básica */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-100 border-b border-gray-700 pb-2">
               Información Básica
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Nombre */}
               <div>
                 <label
                   htmlFor="name"
@@ -341,17 +379,18 @@ const Create = () => {
                 </label>
                 <input
                   id="name"
-                  name="name"
                   type="text"
-                  required
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
                   placeholder="Ej: Max, Luna, Rocky"
-                  value={formData.name}
-                  onChange={handleChange}
+                  {...register("name")}
                 />
+                {errors.name && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
-              {/* Raza */}
               <div>
                 <label
                   htmlFor="breed"
@@ -361,17 +400,18 @@ const Create = () => {
                 </label>
                 <input
                   id="breed"
-                  name="breed"
                   type="text"
-                  required
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
                   placeholder="Ej: Labrador, Persa, Mixto"
-                  value={formData.breed}
-                  onChange={handleChange}
+                  {...register("breed")}
                 />
+                {errors.breed && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.breed.message}
+                  </p>
+                )}
               </div>
 
-              {/* Fecha de Nacimiento */}
               <div>
                 <label
                   htmlFor="birthDate"
@@ -381,16 +421,17 @@ const Create = () => {
                 </label>
                 <input
                   id="birthDate"
-                  name="birthDate"
                   type="date"
-                  required
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100"
-                  value={formData.birthDate}
-                  onChange={handleChange}
+                  {...register("birthDate")}
                 />
+                {errors.birthDate && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.birthDate.message}
+                  </p>
+                )}
               </div>
 
-              {/* Género */}
               <div>
                 <label
                   htmlFor="gender"
@@ -400,20 +441,21 @@ const Create = () => {
                 </label>
                 <select
                   id="gender"
-                  name="gender"
-                  required
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100"
-                  value={formData.gender}
-                  onChange={handleChange}
+                  {...register("gender")}
                 >
                   <option value="">Selecciona un género</option>
                   <option value="macho">Macho</option>
                   <option value="hembra">Hembra</option>
                 </select>
+                {errors.gender && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.gender.message}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Descripción */}
             <div>
               <label
                 htmlFor="description"
@@ -423,25 +465,24 @@ const Create = () => {
               </label>
               <textarea
                 id="description"
-                name="description"
                 rows={3}
-                required
                 className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none"
                 placeholder="Descripción general de la mascota"
-                value={formData.description}
-                onChange={handleChange}
+                {...register("description")}
               />
+              {errors.description && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.description.message}
+                </p>
+              )}
             </div>
 
-            {/* Castrado/Esterilizado */}
             <div className="flex items-center">
               <input
                 id="isCastrated"
-                name="isCastrated"
                 type="checkbox"
                 className="w-5 h-5 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-orange-500 text-orange-500"
-                checked={formData.isCastrated}
-                onChange={handleChange}
+                {...register("isCastrated")}
               />
               <label
                 htmlFor="isCastrated"
@@ -452,13 +493,11 @@ const Create = () => {
             </div>
           </div>
 
-          {/* Detalles Adicionales */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-100 border-b border-gray-700 pb-2">
               Información Adicional (Opcional)
             </h2>
 
-            {/* Temperamento */}
             <div>
               <label
                 htmlFor="temperament"
@@ -468,16 +507,13 @@ const Create = () => {
               </label>
               <input
                 id="temperament"
-                name="temperament"
                 type="text"
                 className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
                 placeholder="Ej: Juguetón, tranquilo, enérgico"
-                value={formData.temperament}
-                onChange={handleChange}
+                {...register("temperament")}
               />
             </div>
 
-            {/* Información Médica */}
             <div>
               <label
                 htmlFor="medicalInformation"
@@ -487,16 +523,13 @@ const Create = () => {
               </label>
               <textarea
                 id="medicalInformation"
-                name="medicalInformation"
                 rows={3}
                 className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none"
                 placeholder="Alergias, vacunas, condiciones especiales, etc."
-                value={formData.medicalInformation}
-                onChange={handleChange}
+                {...register("medicalInformation")}
               />
             </div>
 
-            {/* Image Upload Component */}
             <ImageUpload
               onImageUploaded={handleImageUploaded}
               petName={formData.name || "pet"}
@@ -505,7 +538,6 @@ const Create = () => {
             />
           </div>
 
-          {/* Botones */}
           <div className="flex gap-4 pt-2">
             <button
               type="button"
