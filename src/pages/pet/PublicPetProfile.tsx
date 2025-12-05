@@ -1,76 +1,49 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
-import { api } from "../../config/axios";
-import { useAppSelector } from "../../hooks/redux";
-import { TagInfo } from "../../types/PetsType";
-import IPets from "../../types/PetsType";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
+import {
+  activateTag,
+  clearTagInfo,
+  fetchAvailablePets,
+  fetchTagInfo,
+} from "../../features/pets/petsSlice";
 
 const PetQRPage = () => {
   const { id: tagId } = useParams<{ id: string }>();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+
   const user = useAppSelector((state) => state.auth.user);
-  const [tagInfo, setTagInfo] = useState<TagInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [pets, setPets] = useState<IPets[]>([]);
+  const {
+    tagInfo,
+    tagLoading,
+    tagError,
+    availablePets,
+    availablePetsLoading,
+    activating,
+    activationError,
+  } = useAppSelector((state) => state.pets);
   const [selectedPet, setSelectedPet] = useState("");
-  const [activating, setActivating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    fetchTagInfo();
-    setImageLoaded(false); // Reset image loaded state when tag changes
-  }, [tagId, user]); // Re-fetch si el usuario inicia sesión
-
-  const fetchTagInfo = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/tags/info/${tagId}`);
-      setTagInfo(response.data);
-
-      // if can activate, load user pets
-      if (response.data.canActivate && user) {
-        fetchUserPets();
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Error al cargar la información");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserPets = async () => {
-    try {
-      const response = await api.get(`/pets?ownerId=${user?.uid}`);
-      // pets without associated tag
-      const availablePets = response.data.filter((pet: IPets) => !pet.tagId);
-      setPets(availablePets);
-    } catch (err) {
-      console.error("Error cargando mascotas:", err);
-    }
-  };
-
-  const handleActivate = async () => {
-    if (!selectedPet) {
-      alert("Por favor selecciona una mascota");
-      return;
+    if (tagId) {
+      dispatch(fetchTagInfo(tagId));
+      setImageLoaded(false);
     }
 
-    try {
-      setActivating(true);
-      await api.post(`/tags/activate/${tagId}`, {
-        petId: selectedPet,
-      });
+    return () => {
+      dispatch(clearTagInfo());
+    };
+  }, [tagId, dispatch]);
 
-      await fetchTagInfo();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Error al activar la chapita");
-    } finally {
-      setActivating(false);
+  useEffect(() => {
+    if (tagInfo?.canActivate && user) {
+      dispatch(fetchAvailablePets());
     }
-  };
+  }, [tagInfo?.canActivate, user, dispatch]);
 
-  if (loading) {
+  if (tagLoading) {
     return (
       <div className="min-h-screen  flex items-center justify-center">
         <div className="text-center">
@@ -81,12 +54,12 @@ const PetQRPage = () => {
     );
   }
 
-  if (error || !tagInfo) {
+  if (tagError || !tagInfo) {
     return (
       <div className="min-h-screen  flex items-center justify-center p-4">
         <div className="bg-red-900/30 border border-red-800 text-red-300 px-6 py-4 rounded-2xl max-w-md text-center">
           <h2 className="text-xl font-bold mb-2">⚠️ Error</h2>
-          <p>{error || "No se pudo cargar la información"}</p>
+          <p>{tagError || "No se pudo cargar la información"}</p>
         </div>
       </div>
     );
@@ -164,14 +137,15 @@ const PetQRPage = () => {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Selecciona tu Mascota
               </label>
-              {pets.length > 0 ? (
+              {availablePets.length > 0 ? (
                 <select
                   value={selectedPet}
+                  disabled={availablePetsLoading || activating}
                   onChange={(e) => setSelectedPet(e.target.value)}
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
                 >
                   <option value="">Selecciona una mascota</option>
-                  {pets.map((pet) => (
+                  {availablePets.map((pet) => (
                     <option key={pet._id} value={pet._id}>
                       {pet.name} - {pet.breed}
                     </option>
@@ -196,14 +170,20 @@ const PetQRPage = () => {
               )}
             </div>
 
-            {pets.length > 0 && (
+            {availablePets.length > 0 && (
               <button
-                onClick={handleActivate}
+                onClick={() =>
+                  dispatch(activateTag({ tagId: tagId!, petId: selectedPet }))
+                }
                 disabled={activating || !selectedPet}
                 className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {activating ? "Activando..." : "Activar Chapita"}
               </button>
+            )}
+
+            {activationError && (
+              <div className="text-red-500 text-sm mt-2">{activationError}</div>
             )}
           </div>
         </div>

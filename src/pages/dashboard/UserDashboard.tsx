@@ -6,32 +6,17 @@ import IPets from "../../types/PetsType";
 import { DogIcon } from "lucide-react";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
+import { useAppDispatch } from "../../hooks/redux";
+import { fetchPets } from "../../features/pets/petsSlice";
 
 const UserDashboard = () => {
+  const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
-  const [pets, setPets] = useState<IPets[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { pets, loading, error } = useAppSelector((state) => state.pets);
 
   useEffect(() => {
-    const fetchPets = async () => {
-      if (!user?.uid) return;
-
-      try {
-        setLoading(true);
-        const response = await api.get(`/pets/owner/${user.uid}`);
-        setPets(response.data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching pets:", err);
-        setError("Error al cargar las mascotas");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPets();
-  }, [user]);
+    dispatch(fetchPets());
+  }, [dispatch]);
 
   return (
     <div className="max-w-6xl mx-auto">
