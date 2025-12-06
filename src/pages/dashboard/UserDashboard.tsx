@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../../config/axios";
 import IPets from "../../types/PetsType";
@@ -7,16 +7,40 @@ import { DogIcon } from "lucide-react";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
 import { useAppDispatch } from "../../hooks/redux";
-import { fetchPets } from "../../features/pets/petsSlice";
+import { fetchPets, deletePet } from "../../features/pets/petsSlice";
 
 const UserDashboard = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const { pets, loading, error } = useAppSelector((state) => state.pets);
+  const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchPets());
   }, [dispatch]);
+
+  const handleDelete = async (petId: string, petName: string) => {
+    if (
+      window.confirm(
+        `¿Estás seguro de que deseas eliminar a ${petName}? Esta acción no se puede deshacer.`
+      )
+    ) {
+      try {
+        setDeletingPetId(petId);
+        await dispatch(deletePet(petId)).unwrap();
+      } catch (error) {
+        console.error("Error al eliminar mascota:", error);
+        alert("Error al eliminar la mascota. Por favor, intenta de nuevo.");
+      } finally {
+        setDeletingPetId(null);
+      }
+    }
+  };
+
+  const handleEdit = (petId: string) => {
+    navigate(`/dashboard/edit/${petId}`);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -230,37 +254,87 @@ const UserDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {pets.slice(0, 6).map((pet) => (
-                <Link
+                <div
                   key={pet._id}
-                  to={`/pet/${pet.tagId}`}
-                  className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-orange-500/10 transform hover:scale-[1.02]"
+                  className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
                 >
-                  {pet.photos && pet.photos.length > 0 ? (
-                    <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 overflow-hidden">
-                      <img
-                        src={pet.photos[0]}
-                        alt={pet.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 flex items-center justify-center">
-                      <DogIcon className="w-10 h-10 text-gray-500" />
-                    </div>
-                  )}
+                  <Link to={`/pet/${pet.tagId}`}>
+                    {pet.photos && pet.photos.length > 0 ? (
+                      <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 overflow-hidden">
+                        <img
+                          src={pet.photos[0]}
+                          alt={pet.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 flex items-center justify-center">
+                        <DogIcon className="w-10 h-10 text-gray-500" />
+                      </div>
+                    )}
+                  </Link>
                   <h3 className="text-lg font-semibold text-gray-100 mb-1">
                     {pet.name}
                   </h3>
                   <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
                   {pet?.gender && (
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                       <span className="capitalize">{pet?.gender}</span>
                       <span>
                         {new Date(pet.birthDate).toLocaleDateString()}
                       </span>
                     </div>
                   )}
-                </Link>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => handleEdit(pet._id)}
+                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
+                      title="Editar mascota"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(pet._id, pet.name)}
+                      disabled={deletingPetId === pet._id}
+                      className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Eliminar mascota"
+                    >
+                      {deletingPetId === pet._id ? (
+                        <>Eliminando...</>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                          Eliminar
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}

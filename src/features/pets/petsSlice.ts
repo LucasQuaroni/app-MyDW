@@ -38,6 +38,40 @@ export const createPet = createAsyncThunk<
   }
 });
 
+export const updatePet = createAsyncThunk<
+  IPets,
+  { id: string; data: Partial<IPets> },
+  { rejectValue: string }
+>("pets/updatePet", async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const response = await api.patch(`/pets/${id}`, data);
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Error al actualizar la mascota"
+    );
+  }
+});
+
+export const deletePet = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: string }
+>("pets/deletePet", async (id, { rejectWithValue }) => {
+  try {
+    await api.delete(`/pets/${id}`);
+    return id;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Error al eliminar la mascota"
+    );
+  }
+});
+
 // Fetch tag information by tagId (QR code)
 export const fetchTagInfo = createAsyncThunk<
   TagInfo,
@@ -155,6 +189,35 @@ const petsSlice = createSlice({
     builder.addCase(createPet.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload ?? "Error al crear la mascota";
+    });
+    // updatePet handlers
+    builder.addCase(updatePet.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(updatePet.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.pets.findIndex((pet) => pet._id === action.payload._id);
+      if (index !== -1) {
+        state.pets[index] = action.payload;
+      }
+    });
+    builder.addCase(updatePet.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload ?? "Error al actualizar la mascota";
+    });
+    // deletePet handlers
+    builder.addCase(deletePet.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(deletePet.fulfilled, (state, action) => {
+      state.loading = false;
+      state.pets = state.pets.filter((pet) => pet._id !== action.payload);
+    });
+    builder.addCase(deletePet.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload ?? "Error al eliminar la mascota";
     });
     // fetchTagInfo handlers
     builder.addCase(fetchTagInfo.pending, (state) => {

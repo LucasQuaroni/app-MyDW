@@ -11,6 +11,7 @@ import Register from "./pages/Register.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
 import Create from "./pages/dashboard/Create.tsx";
+import EditPet from "./pages/dashboard/EditPet.tsx";
 import DashboardLayout from "./pages/dashboard/Layout.tsx";
 import PublicPetProfile from "./pages/pet/PublicPetProfile.tsx";
 import TagGenerator from "./pages/admin/TagGenerator.tsx";
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
           {
             path: "create",
             Component: Create,
+          },
+          {
+            path: "edit/:id",
+            Component: EditPet,
           },
         ],
       },
