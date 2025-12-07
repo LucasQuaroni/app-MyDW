@@ -132,6 +132,38 @@ export const activateTag = createAsyncThunk<
   }
 });
 
+export const toggleLostStatus = createAsyncThunk<
+  IPets,
+  { id: string; isLost: boolean },
+  { rejectValue: string }
+>("pets/toggleLostStatus", async ({ id, isLost }, { rejectWithValue }) => {
+  try {
+    const response = await api.patch(`/pets/${id}/lost`, { isLost });
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Error al actualizar el estado de la mascota"
+    );
+  }
+});
+
+export const fetchLostPets = createAsyncThunk<
+  IPets[],
+  void,
+  { rejectValue: string }
+>("pets/fetchLostPets", async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get("/pets/lost");
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Error al cargar las mascotas perdidas"
+    );
+  }
+});
+
 const petsSlice = createSlice({
   name: "pets",
   initialState: {
@@ -149,6 +181,10 @@ const petsSlice = createSlice({
     // Tag activation state
     activating: false,
     activationError: null as string | null,
+    // Lost pets state
+    lostPets: [] as IPets[],
+    lostPetsLoading: false,
+    lostPetsError: null as string | null,
   },
   reducers: {
     setPets: (state, action: PayloadAction<IPets[]>) => {
@@ -163,6 +199,7 @@ const petsSlice = createSlice({
       state.tagError = null;
       state.availablePetsError = null;
       state.activationError = null;
+      state.lostPetsError = null;
     },
   },
   extraReducers: (builder) => {
@@ -263,6 +300,36 @@ const petsSlice = createSlice({
     builder.addCase(activateTag.rejected, (state, action) => {
       state.activating = false;
       state.activationError = action.payload ?? "Error al activar la chapita";
+    });
+    // toggleLostStatus handlers
+    builder.addCase(toggleLostStatus.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(toggleLostStatus.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.pets.findIndex((pet) => pet._id === action.payload._id);
+      if (index !== -1) {
+        state.pets[index] = action.payload;
+      }
+    });
+    builder.addCase(toggleLostStatus.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload ?? "Error al actualizar el estado de la mascota";
+    });
+    // fetchLostPets handlers
+    builder.addCase(fetchLostPets.pending, (state) => {
+      state.lostPetsLoading = true;
+      state.lostPetsError = null;
+    });
+    builder.addCase(fetchLostPets.fulfilled, (state, action) => {
+      state.lostPetsLoading = false;
+      state.lostPets = action.payload;
+    });
+    builder.addCase(fetchLostPets.rejected, (state, action) => {
+      state.lostPetsLoading = false;
+      state.lostPetsError =
+        action.payload ?? "Error al cargar las mascotas perdidas";
     });
   },
 });

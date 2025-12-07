@@ -14,6 +14,7 @@ import Create from "./pages/dashboard/Create.tsx";
 import EditPet from "./pages/dashboard/EditPet.tsx";
 import DashboardLayout from "./pages/dashboard/Layout.tsx";
 import PublicPetProfile from "./pages/pet/PublicPetProfile.tsx";
+import LostPets from "./pages/pet/LostPets.tsx";
 import TagGenerator from "./pages/admin/TagGenerator.tsx";
 import { store } from "./store/store.ts";
 import { Provider } from "react-redux";
@@ -74,6 +75,11 @@ const router = createBrowserRouter([
       {
         path: "pet/:id",
         Component: PublicPetProfile,
+        errorElement: <div>Error</div>,
+      },
+      {
+        path: "lost-pets",
+        Component: LostPets,
         errorElement: <div>Error</div>,
       },
       {

@@ -14,6 +14,8 @@ interface IPets {
   tagId?: string;
   tagActivatedAt?: Date;
   isPublicProfile?: boolean;
+  isLost?: boolean;
+  lostAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

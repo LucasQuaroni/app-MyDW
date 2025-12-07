@@ -7,7 +7,7 @@ import { DogIcon } from "lucide-react";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
 import { useAppDispatch } from "../../hooks/redux";
-import { fetchPets, deletePet } from "../../features/pets/petsSlice";
+import { fetchPets, deletePet, toggleLostStatus } from "../../features/pets/petsSlice";
 
 const UserDashboard = () => {
   const dispatch = useAppDispatch();
@@ -15,6 +15,7 @@ const UserDashboard = () => {
   const user = useAppSelector(selectUser);
   const { pets, loading, error } = useAppSelector((state) => state.pets);
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
+  const [togglingLostId, setTogglingLostId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchPets());
@@ -34,6 +35,25 @@ const UserDashboard = () => {
         alert("Error al eliminar la mascota. Por favor, intenta de nuevo.");
       } finally {
         setDeletingPetId(null);
+      }
+    }
+  };
+
+  const handleToggleLost = async (petId: string, currentStatus: boolean, petName: string) => {
+    const action = currentStatus ? "desmarcar" : "marcar";
+    const message = currentStatus
+      ? `¿Deseas desmarcar a ${petName} como encontrada?`
+      : `¿Deseas marcar a ${petName} como perdida? Esto hará que aparezca en la página pública de mascotas perdidas.`;
+
+    if (window.confirm(message)) {
+      try {
+        setTogglingLostId(petId);
+        await dispatch(toggleLostStatus({ id: petId, isLost: !currentStatus })).unwrap();
+      } catch (error) {
+        console.error("Error al actualizar estado:", error);
+        alert(`Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`);
+      } finally {
+        setTogglingLostId(null);
       }
     }
   };
@@ -275,6 +295,11 @@ const UserDashboard = () => {
                   </Link>
                   <h3 className="text-lg font-semibold text-gray-100 mb-1">
                     {pet.name}
+                    {pet.isLost && (
+                      <span className="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                        PERDIDA
+                      </span>
+                    )}
                   </h3>
                   <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
                   {pet?.gender && (
@@ -285,7 +310,8 @@ const UserDashboard = () => {
                       </span>
                     </div>
                   )}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex flex-col gap-2 mt-3">
+                    <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(pet._id)}
                       className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -330,6 +356,55 @@ const UserDashboard = () => {
                             />
                           </svg>
                           Eliminar
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => handleToggleLost(pet._id, pet.isLost || false, pet.name)}
+                      disabled={togglingLostId === pet._id}
+                      className={`w-full py-2 px-3 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+                        pet.isLost
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-amber-600 hover:bg-amber-700"
+                      }`}
+                      title={pet.isLost ? "Marcar como encontrada" : "Marcar como perdida"}
+                    >
+                      {togglingLostId === pet._id ? (
+                        <>Actualizando...</>
+                      ) : pet.isLost ? (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Encontrada
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                            />
+                          </svg>
+                          Reportar Perdida
                         </>
                       )}
                     </button>
