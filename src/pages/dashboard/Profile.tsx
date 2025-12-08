@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { joiResolver } from "@hookform/resolvers/joi";
+import Joi from "joi";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
 import { api } from "../../config/axios";
@@ -13,6 +16,55 @@ interface UserProfile {
   address?: string;
 }
 
+type ProfileFormData = {
+  name: string;
+  lastname: string;
+  phone: string;
+  address: string;
+};
+
+// Validation schema
+const profileSchema = Joi.object({
+  name: Joi.string()
+    .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
+    .min(2)
+    .max(50)
+    .allow("")
+    .messages({
+      "string.pattern.base": "El nombre solo puede contener letras y espacios",
+      "string.min": "El nombre debe tener al menos 2 caracteres",
+      "string.max": "El nombre no puede exceder 50 caracteres",
+    }),
+  lastname: Joi.string()
+    .pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/)
+    .min(2)
+    .max(50)
+    .allow("")
+    .messages({
+      "string.pattern.base": "El apellido solo puede contener letras y espacios",
+      "string.min": "El apellido debe tener al menos 2 caracteres",
+      "string.max": "El apellido no puede exceder 50 caracteres",
+    }),
+  phone: Joi.string()
+    .pattern(/^[\d\s\-\+\(\)]+$/)
+    .min(8)
+    .max(20)
+    .allow("")
+    .messages({
+      "string.pattern.base": "El teléfono solo puede contener números, espacios, guiones, + y paréntesis",
+      "string.min": "El teléfono debe tener al menos 8 caracteres",
+      "string.max": "El teléfono no puede exceder 20 caracteres",
+    }),
+  address: Joi.string()
+    .min(5)
+    .max(200)
+    .allow("")
+    .messages({
+      "string.min": "La dirección debe tener al menos 5 caracteres",
+      "string.max": "La dirección no puede exceder 200 caracteres",
+    }),
+});
+
 const Profile = () => {
   const user = useAppSelector(selectUser);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -21,11 +73,19 @@ const Profile = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    lastname: "",
-    phone: "",
-    address: "",
+  const {
+    register,
+    handleSubmit: handleFormSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileFormData>({
+    resolver: joiResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      lastname: "",
+      phone: "",
+      address: "",
+    },
   });
 
   useEffect(() => {
@@ -36,7 +96,7 @@ const Profile = () => {
         setLoading(true);
         const response = await api.get(`/users/${user.uid}`);
         setProfile(response.data);
-        setFormData({
+        reset({
           name: response.data.name || "",
           lastname: response.data.lastname || "",
           phone: response.data.phone || "",
@@ -51,21 +111,9 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, [user?.uid]);
+  }, [user?.uid, reset]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: ProfileFormData) => {
     if (!user?.uid) return;
 
     try {
@@ -73,7 +121,7 @@ const Profile = () => {
       setError(null);
       setSuccessMessage(null);
 
-      await api.patch(`/users/${user.uid}`, formData);
+      await api.patch(`/users/${user.uid}`, data);
 
       setSuccessMessage("Perfil actualizado correctamente");
 
@@ -187,7 +235,7 @@ const Profile = () => {
         </div>
 
         {/* Form Section */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleFormSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -200,12 +248,15 @@ const Profile = () => {
               <input
                 type="text"
                 id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
+                {...register("name")}
                 className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="Ingresa tu nombre"
               />
+              {errors.name && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -218,12 +269,15 @@ const Profile = () => {
               <input
                 type="text"
                 id="lastname"
-                name="lastname"
-                value={formData.lastname}
-                onChange={handleChange}
+                {...register("lastname")}
                 className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 placeholder="Ingresa tu apellido"
               />
+              {errors.lastname && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.lastname.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -241,12 +295,15 @@ const Profile = () => {
             <input
               type="tel"
               id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
+              {...register("phone")}
               className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               placeholder="Ej: +54 9 11 1234-5678"
             />
+            {errors.phone && (
+              <p className="text-red-400 text-xs mt-1">
+                {errors.phone.message}
+              </p>
+            )}
           </div>
 
           {/* Address Field */}
@@ -262,13 +319,16 @@ const Profile = () => {
             </label>
             <textarea
               id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
+              {...register("address")}
               rows={3}
               className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
               placeholder="Ej: Av. Corrientes 1234, CABA, Argentina"
             />
+            {errors.address && (
+              <p className="text-red-400 text-xs mt-1">
+                {errors.address.message}
+              </p>
+            )}
           </div>
 
           {/* Info Box */}
