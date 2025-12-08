@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import { logoutUser, observeUser } from "../features/auth/authSlice";
+import { UserCircle } from "lucide-react";
 
 const Layout = () => {
   const dispatch = useAppDispatch();
@@ -28,7 +29,7 @@ const Layout = () => {
       <nav className="bg-gray-900 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <Link to="/" className="group flex items-center gap-2">
                 <img
                   src="/Logo.svg"
@@ -91,9 +92,13 @@ const Layout = () => {
                 {/* Auth buttons */}
                 {user ? (
                   <>
-                    <span className="text-gray-400 px-3 py-2 text-sm">
-                      {user.email}
-                    </span>
+                    <Link
+                      to="/dashboard/profile"
+                      className="font-extrabold flex items-center gap-2 text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm transition-colors duration-200"
+                      title="Mi perfil"
+                    >
+                      Mi perfil
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="text-gray-300 hover:text-red-400 hover:bg-red-900/20 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
@@ -176,6 +181,15 @@ const Layout = () => {
               >
                 Contact
               </Link>
+              {user && (
+                <Link
+                  className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Mis mascotas
+                </Link>
+              )}
               {user?.email?.includes("admin") && (
                 <Link
                   className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
@@ -188,9 +202,14 @@ const Layout = () => {
               {/* Auth buttons mobile */}
               {user ? (
                 <>
-                  <div className="px-3 py-2 text-sm text-gray-400">
-                    {user.email}
-                  </div>
+                  <Link
+                    to="/dashboard/profile"
+                    className="flex items-center gap-3 text-gray-300 hover:text-orange-400 hover:bg-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <UserCircle className="w-5 h-5" />
+                    Mi perfil
+                  </Link>
                   <button
                     onClick={() => {
                       handleLogout();
@@ -211,7 +230,7 @@ const Layout = () => {
                     Iniciar sesión
                   </Link>
                   <Link
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 shadow-lg"
+                    className="bg-linear-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 shadow-lg"
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
                   >

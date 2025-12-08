@@ -111,6 +111,23 @@ export const loginWithGoogle = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
+    // Verificar si el usuario existe en la base de datos, si no, crearlo
+    try {
+      await api.get(`/users/${user.uid}`);
+    } catch (error: any) {
+      // Si el usuario no existe, crearlo
+      if (error.response?.status === 404) {
+        try {
+          await api.post("/users/google", {
+            uid: user.uid,
+            email: user.email,
+          });
+        } catch (createError) {
+          console.error("Error creating user in backend:", createError);
+        }
+      }
+    }
+
     return {
       uid: user.uid,
       email: user.email,

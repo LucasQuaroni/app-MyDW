@@ -83,7 +83,7 @@ const PetQRPage = () => {
             <Link
               to="/login"
               state={{ redirectTo: location.pathname }}
-              className="block w-full py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all"
+              className="block w-full py-3 px-4 rounded-xl font-semibold text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 transition-all"
             >
               Iniciar Sesión
             </Link>
@@ -162,7 +162,7 @@ const PetQRPage = () => {
                       redirectTo: location.pathname,
                       fromTagActivation: true,
                     }}
-                    className="inline-block py-2 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                    className="inline-block py-2 px-4 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
                   >
                     Registrar Mascota
                   </Link>
@@ -176,7 +176,7 @@ const PetQRPage = () => {
                   dispatch(activateTag({ tagId: tagId!, petId: selectedPet }))
                 }
                 disabled={activating || !selectedPet}
-                className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {activating ? "Activando..." : "Activar Chapita"}
               </button>
@@ -272,6 +272,17 @@ const PetQRPage = () => {
                     <span className="font-semibold">Dueño:</span> {owner.name}
                   </p>
                 )}
+                {owner?.email && (
+                  <p>
+                    <span className="font-semibold">Email:</span>{" "}
+                    <a
+                      href={`mailto:${owner.email}`}
+                      className="text-orange-400 hover:underline"
+                    >
+                      {owner.email}
+                    </a>
+                  </p>
+                )}
                 {owner?.phone && (
                   <p>
                     <span className="font-semibold">Teléfono:</span>{" "}
@@ -283,15 +294,10 @@ const PetQRPage = () => {
                     </a>
                   </p>
                 )}
-                {owner?.email && (
+                {owner?.address && (
                   <p>
-                    <span className="font-semibold">Email:</span>{" "}
-                    <a
-                      href={`mailto:${owner.email}`}
-                      className="text-orange-400 hover:underline"
-                    >
-                      {owner.email}
-                    </a>
+                    <span className="font-semibold">Dirección:</span>{" "}
+                    <span className="text-gray-300">{owner.address}</span>
                   </p>
                 )}
               </div>

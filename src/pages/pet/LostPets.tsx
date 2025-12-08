@@ -206,6 +206,17 @@ const PetCard = ({ pet, imageLoaded, onImageLoad }: PetCardProps) => {
                 {pet.owner.lastname && ` ${pet.owner.lastname}`}
               </p>
             )}
+            {pet.owner?.email && (
+              <p>
+                <span className="font-semibold">Email:</span>{" "}
+                <a
+                  href={`mailto:${pet.owner.email}`}
+                  className="text-orange-400 hover:underline break-all"
+                >
+                  {pet.owner.email}
+                </a>
+              </p>
+            )}
             {pet.owner?.phone && (
               <p>
                 <span className="font-semibold">Teléfono:</span>{" "}
@@ -217,15 +228,10 @@ const PetCard = ({ pet, imageLoaded, onImageLoad }: PetCardProps) => {
                 </a>
               </p>
             )}
-            {pet.owner?.email && (
+            {pet.owner?.address && (
               <p>
-                <span className="font-semibold">Email:</span>{" "}
-                <a
-                  href={`mailto:${pet.owner.email}`}
-                  className="text-orange-400 hover:underline break-all"
-                >
-                  {pet.owner.email}
-                </a>
+                <span className="font-semibold">Dirección:</span>{" "}
+                <span className="text-gray-300">{pet.owner.address}</span>
               </p>
             )}
           </div>

@@ -38,8 +38,9 @@ export interface TagInfo {
   owner?: {
     name?: string;
     lastname?: string;
-    phone: string;
+    phone?: string;
     email: string;
+    address?: string;
   };
 }
 
