@@ -72,7 +72,6 @@ export const deletePet = createAsyncThunk<
   }
 });
 
-// Fetch tag information by tagId (QR code)
 export const fetchTagInfo = createAsyncThunk<
   TagInfo,
   string, // tagId
@@ -164,6 +163,22 @@ export const fetchLostPets = createAsyncThunk<
   }
 });
 
+// Fetch a single pet by ID
+export const fetchPetById = createAsyncThunk<
+  IPets,
+  string, // petId
+  { rejectValue: string }
+>("pets/fetchPetById", async (petId, { rejectWithValue }) => {
+  try {
+    const response = await api.get(`/pets/${petId}`);
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Error al cargar la mascota"
+    );
+  }
+});
+
 const petsSlice = createSlice({
   name: "pets",
   initialState: {
@@ -171,6 +186,10 @@ const petsSlice = createSlice({
     loading: false,
     error: null as string | null,
     success: null as string | null,
+    // Current pet (for detail/edit views)
+    currentPet: null as IPets | null,
+    currentPetLoading: false,
+    currentPetError: null as string | null,
     // Tag-related state
     tagInfo: null as TagInfo | null,
     tagLoading: false,
@@ -195,6 +214,10 @@ const petsSlice = createSlice({
       state.tagInfo = null;
       state.tagError = null;
     },
+    clearCurrentPet: (state) => {
+      state.currentPet = null;
+      state.currentPetError = null;
+    },
     clearErrors: (state) => {
       state.error = null;
       state.success = null;
@@ -202,6 +225,7 @@ const petsSlice = createSlice({
       state.availablePetsError = null;
       state.activationError = null;
       state.lostPetsError = null;
+      state.currentPetError = null;
     },
     clearPetMessages: (state) => {
       state.error = null;
@@ -345,9 +369,27 @@ const petsSlice = createSlice({
       state.lostPetsError =
         action.payload ?? "Error al cargar las mascotas perdidas";
     });
+    // fetchPetById handlers
+    builder.addCase(fetchPetById.pending, (state) => {
+      state.currentPetLoading = true;
+      state.currentPetError = null;
+    });
+    builder.addCase(fetchPetById.fulfilled, (state, action) => {
+      state.currentPetLoading = false;
+      state.currentPet = action.payload;
+    });
+    builder.addCase(fetchPetById.rejected, (state, action) => {
+      state.currentPetLoading = false;
+      state.currentPetError = action.payload ?? "Error al cargar la mascota";
+    });
   },
 });
 
-export const { setPets, clearTagInfo, clearErrors, clearPetMessages } =
-  petsSlice.actions;
+export const {
+  setPets,
+  clearTagInfo,
+  clearCurrentPet,
+  clearErrors,
+  clearPetMessages,
+} = petsSlice.actions;
 export default petsSlice.reducer;

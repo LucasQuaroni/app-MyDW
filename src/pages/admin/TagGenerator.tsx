@@ -32,7 +32,6 @@ const TagGenerator = () => {
       setTags(response.data || []);
     } catch (err: any) {
       console.error("Error al cargar tags:", err);
-      // Si el endpoint no existe, mostrar tags vacíos
       setTags([]);
     } finally {
       setLoadingTags(false);

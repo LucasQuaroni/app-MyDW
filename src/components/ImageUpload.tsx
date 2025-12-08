@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase/config";
 import imageCompression from "browser-image-compression";
@@ -22,6 +22,11 @@ export const ImageUpload = ({
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [previews, setPreviews] = useState<string[]>(currentImages);
 
+  // Sync previews with currentImages when they change
+  useEffect(() => {
+    setPreviews(currentImages);
+  }, [currentImages]);
+
   const compressImage = async (file: File): Promise<File> => {
     const options = {
       maxSizeMB: 1, // Maximum file size in MB
@@ -33,7 +38,7 @@ export const ImageUpload = ({
       return await imageCompression(file, options);
     } catch (error) {
       console.error("Error compressing image:", error);
-      return file; // Return original if compression fails
+      return file;
     }
   };
 
@@ -41,10 +46,12 @@ export const ImageUpload = ({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Check if we've reached the max number of images
+    const file = files[0];
+
+    e.target.value = "";
+
     if (previews.length >= maxImages) {
       if (maxImages === 1) {
-        // For single image mode, replace the existing image
         setPreviews([]);
       } else {
         alert(`Máximo ${maxImages} imágenes permitidas`);
@@ -52,28 +59,25 @@ export const ImageUpload = ({
       }
     }
 
-    const file = files[0];
-
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       alert("Por favor selecciona un archivo de imagen válido");
       return;
     }
 
-    // Validate file size (before compression)
     const maxSizeBytes = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSizeBytes) {
       alert("La imagen es muy grande. Máximo 10MB");
       return;
     }
 
-    // Show preview immediately
     const previewUrl = URL.createObjectURL(file);
     setPreviews((prev) => [...prev, previewUrl]);
+
+    setUploading(true);
+    onUploadingChange?.(true);
     setUploadProgress(10);
 
     try {
-      // Compress image
       setUploadProgress(30);
       const compressedFile = await compressImage(file);
       console.log(
@@ -84,22 +88,22 @@ export const ImageUpload = ({
         ).toFixed(2)}MB`
       );
 
-      // Upload to Firebase
       setUploadProgress(50);
       await uploadImage(compressedFile);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (error) {
       console.error("Error processing image:", error);
-      // Remove preview on error
       setPreviews((prev) => prev.filter((p) => p !== previewUrl));
       alert("Error al procesar la imagen. Intenta de nuevo.");
     } finally {
+      setUploading(false);
+      onUploadingChange?.(false);
       setUploadProgress(0);
     }
   };
 
   const uploadImage = async (file: File) => {
-    setUploading(true);
-    onUploadingChange?.(true);
     try {
       // Create unique filename with timestamp
       const timestamp = Date.now();
@@ -127,9 +131,6 @@ export const ImageUpload = ({
     } catch (error) {
       console.error("Error uploading image:", error);
       throw error; // Re-throw to be caught by caller
-    } finally {
-      setUploading(false);
-      onUploadingChange?.(false);
     }
   };
 

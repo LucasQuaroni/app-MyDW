@@ -16,7 +16,6 @@ import { RootState } from "../../store/store";
 import { auth } from "../../firebase/config";
 import { api } from "../../config/axios";
 
-// Define the shape of our user data
 export interface AuthUser {
   uid: string;
   email: string | null;
@@ -37,20 +36,17 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Register new user
 export const registerUser = createAsyncThunk<
   AuthUser,
   { email: string; password: string },
   { rejectValue: string }
 >("auth/registerUser", async ({ email, password }, { rejectWithValue }) => {
   try {
-    // Create user via API
     await api.post("/users", {
       email,
       password,
     });
 
-    // Automatically log in the user after registration
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
@@ -61,7 +57,6 @@ export const registerUser = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
-    // Fetch user data from backend to get isAdmin
     let isAdmin = false;
     try {
       const response = await api.get(`/users/${user.uid}`);
@@ -81,7 +76,6 @@ export const registerUser = createAsyncThunk<
   }
 });
 
-// Login existing user
 export const loginUser = createAsyncThunk<
   AuthUser,
   { email: string; password: string },
@@ -98,7 +92,6 @@ export const loginUser = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
-    // Fetch user data from backend to get isAdmin
     let isAdmin = false;
     try {
       const response = await api.get(`/users/${user.uid}`);
@@ -118,7 +111,6 @@ export const loginUser = createAsyncThunk<
   }
 });
 
-// Login with Google
 export const loginWithGoogle = createAsyncThunk<
   AuthUser,
   void,
@@ -132,13 +124,11 @@ export const loginWithGoogle = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
-    // Verificar si el usuario existe en la base de datos, si no, crearlo
     let isAdmin = false;
     try {
       const userResponse = await api.get(`/users/${user.uid}`);
       isAdmin = userResponse.data.isAdmin || false;
     } catch (error: any) {
-      // Si el usuario no existe, crearlo
       if (error.response?.status === 404) {
         try {
           const createResponse = await api.post("/users/google", {
@@ -163,7 +153,6 @@ export const loginWithGoogle = createAsyncThunk<
   }
 });
 
-// Logout user
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   "auth/logout",
   async (_, { rejectWithValue }) => {
@@ -176,7 +165,6 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   }
 );
 
-// Observe Firebase user state
 export const observeUser = createAsyncThunk<void, void, { dispatch: Dispatch }>(
   "auth/observeUser",
   async (_, { dispatch }) => {
@@ -186,8 +174,7 @@ export const observeUser = createAsyncThunk<void, void, { dispatch: Dispatch }>(
           if (user) {
             const token = await user.getIdToken();
             localStorage.setItem("token", token);
-            
-            // Fetch user data from backend to get isAdmin
+
             let isAdmin = false;
             try {
               const response = await api.get(`/users/${user.uid}`);
@@ -195,8 +182,10 @@ export const observeUser = createAsyncThunk<void, void, { dispatch: Dispatch }>(
             } catch (error) {
               console.error("Error fetching user data:", error);
             }
-            
-            dispatch(setUser({ uid: user.uid, email: user.email, token, isAdmin }));
+
+            dispatch(
+              setUser({ uid: user.uid, email: user.email, token, isAdmin })
+            );
           } else {
             localStorage.removeItem("token");
             dispatch(clearUser());

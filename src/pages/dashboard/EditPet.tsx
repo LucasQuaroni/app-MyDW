@@ -3,10 +3,13 @@ import { useNavigate, Link, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
-import { api } from "../../config/axios";
 import { useAppSelector, useAppDispatch } from "../../hooks/redux";
 import { ImageUpload } from "../../components/ImageUpload";
-import { updatePet } from "../../features/pets/petsSlice";
+import {
+  updatePet,
+  fetchPetById,
+  clearCurrentPet,
+} from "../../features/pets/petsSlice";
 
 const petSchema = Joi.object({
   name: Joi.string().required().messages({
@@ -51,13 +54,14 @@ const EditPet = () => {
   const dispatch = useAppDispatch();
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
-  const [loadingPet, setLoadingPet] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const user = useAppSelector((state) => state.auth.user);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [petData, setPetData] = useState<any>(null);
+
+  const currentPet = useAppSelector((state) => state.pets.currentPet);
+  const loadingPet = useAppSelector((state) => state.pets.currentPetLoading);
+  const petError = useAppSelector((state) => state.pets.currentPetError);
 
   const {
     register,
@@ -69,43 +73,42 @@ const EditPet = () => {
   });
 
   useEffect(() => {
-    const loadPetData = async () => {
-      try {
-        setLoadingPet(true);
-        const response = await api.get(`/pets/${id}`);
-        const pet = response.data;
-        setPetData(pet);
-
-        // Formatear la fecha de nacimiento para el input date
-        const birthDate = new Date(pet.birthDate);
-        const formattedDate = birthDate.toISOString().split('T')[0];
-
-        reset({
-          name: pet.name,
-          description: pet.description,
-          birthDate: formattedDate,
-          gender: pet.gender,
-          breed: pet.breed,
-          isCastrated: pet.isCastrated,
-          medicalInformation: pet.medicalInformation || "",
-          temperament: pet.temperament || "",
-        });
-
-        setPhotoUrls(pet.photos || []);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Error al cargar la mascota");
-      } finally {
-        setLoadingPet(false);
-      }
-    };
-
     if (id) {
-      loadPetData();
+      dispatch(fetchPetById(id));
     }
-  }, [id, reset]);
+
+    return () => {
+      dispatch(clearCurrentPet());
+    };
+  }, [id, dispatch]);
+
+  useEffect(() => {
+    if (currentPet) {
+      const birthDate = new Date(currentPet.birthDate);
+      const formattedDate = birthDate.toISOString().split("T")[0];
+
+      reset({
+        name: currentPet.name,
+        description: currentPet.description,
+        birthDate: formattedDate,
+        gender: currentPet.gender,
+        breed: currentPet.breed,
+        isCastrated: currentPet.isCastrated,
+        medicalInformation: currentPet.medicalInformation || "",
+        temperament: currentPet.temperament || "",
+      });
+
+      setPhotoUrls(currentPet.photos || []);
+    }
+  }, [currentPet, reset]);
+
+  useEffect(() => {
+    if (petError) {
+      setError(petError);
+    }
+  }, [petError]);
 
   const handleImageUploaded = (url: string) => {
-    // Replace existing image with new one (only one image allowed)
     setPhotoUrls([url]);
   };
 
@@ -170,7 +173,6 @@ const EditPet = () => {
     );
   }
 
-
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
@@ -197,7 +199,7 @@ const EditPet = () => {
           Editar Mascota
         </h1>
         <p className="text-gray-400">
-          Actualiza la información de {petData?.name}
+          Actualiza la información de {currentPet?.name}
         </p>
       </div>
 
@@ -389,7 +391,7 @@ const EditPet = () => {
 
             <ImageUpload
               onImageUploaded={handleImageUploaded}
-              petName={petData?.name || "pet"}
+              petName={currentPet?.name || "pet"}
               maxImages={1}
               currentImages={photoUrls}
               onUploadingChange={setUploadingImage}
@@ -407,9 +409,13 @@ const EditPet = () => {
             <button
               type="submit"
               disabled={loading || uploadingImage}
-              className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {uploadingImage ? "Subiendo imagen..." : loading ? "Actualizando..." : "Actualizar Mascota"}
+              {uploadingImage
+                ? "Subiendo imagen..."
+                : loading
+                ? "Actualizando..."
+                : "Actualizar Mascota"}
             </button>
           </div>
         </form>
@@ -419,4 +425,3 @@ const EditPet = () => {
 };
 
 export default EditPet;
-

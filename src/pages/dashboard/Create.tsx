@@ -84,7 +84,6 @@ const Create = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Clean up any drafts that don't belong to the current user
     const currentUserId = user.uid;
     const keysToCheck = Object.keys(localStorage);
 
@@ -97,7 +96,6 @@ const Create = () => {
       }
     });
 
-    // Clear session flags from other users in sessionStorage
     const sessionKeysToCheck = Object.keys(sessionStorage);
     sessionKeysToCheck.forEach((key) => {
       if (
@@ -116,11 +114,9 @@ const Create = () => {
       const saved = localStorage.getItem(FORM_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Validate that the saved data belongs to the current user
         if (parsed.userId === user?.uid) {
           return parsed;
         } else {
-          // Remove invalid draft
           localStorage.removeItem(FORM_STORAGE_KEY);
         }
       }
@@ -137,17 +133,13 @@ const Create = () => {
 
   const hasUserEditedInThisSession = useRef(false);
 
-  // Use state so it triggers re-render when detected
   const [isReturningSession, setIsReturningSession] = useState(false);
 
-  // Check on mount: clear session flag and detect if there's saved data
   useEffect(() => {
     if (!SESSION_FLAG_KEY) return;
 
-    // Clear the session flag on mount - this ensures the banner shows on reload
     sessionStorage.removeItem(SESSION_FLAG_KEY);
 
-    // If there's saved data, user is returning
     if (savedData) {
       setIsReturningSession(true);
     }
@@ -212,20 +204,16 @@ const Create = () => {
       if (!hasUserEditedInThisSession.current) {
         hasUserEditedInThisSession.current = true;
         sessionStorage.setItem(SESSION_FLAG_KEY, "true");
-        // Hide the banner once user starts editing
         setIsReturningSession(false);
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, SESSION_FLAG_KEY]);
 
-  // Handle image upload callback
   const handleImageUploaded = (url: string) => {
-    // Mark session as active on image upload
     if (!hasUserEditedInThisSession.current && SESSION_FLAG_KEY) {
       hasUserEditedInThisSession.current = true;
       sessionStorage.setItem(SESSION_FLAG_KEY, "true");
-      // Hide the banner once user starts editing
       setIsReturningSession(false);
     }
 
@@ -248,14 +236,11 @@ const Create = () => {
     }
   };
 
-  // Check if we should show the "Draft Restored" banner
-  // Only show if: 1) there's saved data, 2) it has content, 3) user is returning (not same session)
   const shouldShowRestoredBanner = () => {
     if (!savedData || !isReturningSession) return false;
 
     const { formData: saved, photoUrls: savedPhotos } = savedData;
 
-    // Check if any field has meaningful data
     const hasFormData =
       saved?.name ||
       saved?.description ||
@@ -598,7 +583,11 @@ const Create = () => {
               disabled={loading || uploadingImage}
               className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {uploadingImage ? "Subiendo imagen..." : loading ? "Registrando..." : "Registrar Mascota"}
+              {uploadingImage
+                ? "Subiendo imagen..."
+                : loading
+                ? "Registrando..."
+                : "Registrar Mascota"}
             </button>
           </div>
         </form>

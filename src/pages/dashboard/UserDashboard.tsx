@@ -1,13 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { api } from "../../config/axios";
-import IPets from "../../types/PetsType";
 
 import { DogIcon } from "lucide-react";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
 import { useAppDispatch } from "../../hooks/redux";
-import { fetchPets, deletePet, toggleLostStatus } from "../../features/pets/petsSlice";
+import {
+  fetchPets,
+  deletePet,
+  toggleLostStatus,
+} from "../../features/pets/petsSlice";
 
 const UserDashboard = () => {
   const dispatch = useAppDispatch();
@@ -39,19 +41,27 @@ const UserDashboard = () => {
     }
   };
 
-  const handleToggleLost = async (petId: string, currentStatus: boolean, petName: string) => {
+  const handleToggleLost = async (
+    petId: string,
+    currentStatus: boolean,
+    petName: string
+  ) => {
     const action = currentStatus ? "desmarcar" : "marcar";
     const message = currentStatus
-      ? `¿Deseas desmarcar a ${petName} como encontrada?`
-      : `¿Deseas marcar a ${petName} como perdida? Esto hará que aparezca en la página pública de mascotas perdidas.`;
+      ? `¿Deseas marcar como encontrada a ${petName}?`
+      : `¿Deseas marcar como perdida a ${petName}? Esto hará que aparezca en la página pública de mascotas perdidas.`;
 
     if (window.confirm(message)) {
       try {
         setTogglingLostId(petId);
-        await dispatch(toggleLostStatus({ id: petId, isLost: !currentStatus })).unwrap();
+        await dispatch(
+          toggleLostStatus({ id: petId, isLost: !currentStatus })
+        ).unwrap();
       } catch (error) {
         console.error("Error al actualizar estado:", error);
-        alert(`Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`);
+        alert(
+          `Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`
+        );
       } finally {
         setTogglingLostId(null);
       }
@@ -78,7 +88,7 @@ const UserDashboard = () => {
       {/* Flex container to reorder on mobile */}
       <div className="flex flex-col">
         {/* Quick Actions - Horizontal scroll on mobile, grid on desktop */}
-        <div className="mb-6 md:mb-8 order-2 md:order-1">
+        <div className="mb-6 md:mb-8 order-1">
           <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
             {/* Add Pet Card */}
             <div className="flex-shrink-0 w-[280px] md:w-auto bg-gray-800 rounded-2xl p-5 md:p-6 border border-gray-700 shadow-md">
@@ -187,8 +197,8 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* My Pets Section - Shows first on mobile */}
-        <div className="bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-700 shadow-md mb-6 md:mb-8 order-1 md:order-2">
+        {/* My Pets Section */}
+        <div className="bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-700 shadow-md mb-6 md:mb-8 order-2">
           <h2 className="text-xl md:text-2xl font-bold text-gray-100 mb-4">
             Mis Mascotas
           </h2>
@@ -326,63 +336,69 @@ const UserDashboard = () => {
 
                   <div className="flex flex-col gap-2 mt-3">
                     <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(pet._id)}
-                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
-                      title="Editar mascota"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                      <button
+                        onClick={() => handleEdit(pet._id)}
+                        className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
+                        title="Editar mascota"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(pet._id, pet.name)}
-                      disabled={deletingPetId === pet._id}
-                      className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Eliminar mascota"
-                    >
-                      {deletingPetId === pet._id ? (
-                        <>Eliminando...</>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                          Eliminar
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(pet._id, pet.name)}
+                        disabled={deletingPetId === pet._id}
+                        className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Eliminar mascota"
+                      >
+                        {deletingPetId === pet._id ? (
+                          <>Eliminando...</>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            Eliminar
                           </>
                         )}
                       </button>
                     </div>
                     <button
-                      onClick={() => handleToggleLost(pet._id, pet.isLost || false, pet.name)}
+                      onClick={() =>
+                        handleToggleLost(pet._id, pet.isLost || false, pet.name)
+                      }
                       disabled={togglingLostId === pet._id}
                       className={`w-full py-2 px-3 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed ${
                         pet.isLost
                           ? "bg-green-600 hover:bg-green-700"
                           : "bg-amber-600 hover:bg-amber-700"
                       }`}
-                      title={pet.isLost ? "Marcar como encontrada" : "Marcar como perdida"}
+                      title={
+                        pet.isLost
+                          ? "Marcar como encontrada"
+                          : "Marcar como perdida"
+                      }
                     >
                       {togglingLostId === pet._id ? (
                         <>Actualizando...</>
