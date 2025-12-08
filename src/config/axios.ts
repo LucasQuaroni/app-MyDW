@@ -2,8 +2,8 @@ import axios from "axios";
 import { auth } from "../firebase/config";
 
 const api = axios.create({
-  // baseURL: import.meta.env.VITE_API_URL || "https://app-my-dw.vercel.app/api",
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3019/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://app-my-dw.vercel.app/api",
+  // baseURL: import.meta.env.VITE_API_URL || "http://localhost:3019/api",
 });
 
 api.interceptors.request.use(
