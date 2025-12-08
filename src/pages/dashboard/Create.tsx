@@ -3,12 +3,16 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { joiResolver } from "@hookform/resolvers/joi";
 import Joi from "joi";
-import { api } from "../../config/axios";
-import { useAppSelector } from "../../hooks/redux";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { ImageUpload } from "../../components/ImageUpload";
+import { createPet, clearPetMessages } from "../../features/pets/petsSlice";
+import { CreatePetData } from "../../types/PetsType";
 
-const FORM_STORAGE_KEY = "pet-registration-form-draft";
-const SESSION_FLAG_KEY = "pet-registration-session-active";
+// Helper functions to get user-scoped storage keys
+const getFormStorageKey = (userId: string) =>
+  `pet-registration-form-draft-${userId}`;
+const getSessionFlagKey = (userId: string) =>
+  `pet-registration-session-active-${userId}`;
 
 const petSchema = Joi.object({
   name: Joi.string().required().messages({
@@ -48,44 +52,103 @@ type PetFormData = {
   temperament?: string;
 };
 
+const FORM_DEFAULT_VALUES = {
+  name: "",
+  description: "",
+  birthDate: "",
+  gender: "",
+  breed: "",
+  isCastrated: false,
+  medicalInformation: "",
+  temperament: "",
+};
+
 const Create = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+
+  const dispatch = useAppDispatch();
+  const { loading, error, success } = useAppSelector((state) => state.pets);
   const user = useAppSelector((state) => state.auth.user);
 
   const redirectTo = (location.state as any)?.redirectTo;
   const fromTagActivation = (location.state as any)?.fromTagActivation;
 
+  const FORM_STORAGE_KEY = user ? getFormStorageKey(user.uid) : null;
+  const SESSION_FLAG_KEY = user ? getSessionFlagKey(user.uid) : null;
+
+  useEffect(() => {
+    dispatch(clearPetMessages());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Clean up any drafts that don't belong to the current user
+    const currentUserId = user.uid;
+    const keysToCheck = Object.keys(localStorage);
+
+    keysToCheck.forEach((key) => {
+      if (
+        key.startsWith("pet-registration-form-draft-") &&
+        !key.includes(currentUserId)
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Clear session flags from other users in sessionStorage
+    const sessionKeysToCheck = Object.keys(sessionStorage);
+    sessionKeysToCheck.forEach((key) => {
+      if (
+        key.startsWith("pet-registration-session-active-") &&
+        !key.includes(currentUserId)
+      ) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }, [user]);
+
   const loadSavedFormData = () => {
+    if (!FORM_STORAGE_KEY) return null;
+
     try {
       const saved = localStorage.getItem(FORM_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed;
+        // Validate that the saved data belongs to the current user
+        if (parsed.userId === user?.uid) {
+          return parsed;
+        } else {
+          // Remove invalid draft
+          localStorage.removeItem(FORM_STORAGE_KEY);
+        }
       }
     } catch (error) {
       console.error("Error loading saved form data:", error);
+      if (FORM_STORAGE_KEY) {
+        localStorage.removeItem(FORM_STORAGE_KEY);
+      }
     }
     return null;
   };
 
   const savedData = loadSavedFormData();
 
-  // Detect if user is returning (has saved data but hasn't started editing in this mount)
-  // Using useRef to track if user has made changes in THIS component mount
   const hasUserEditedInThisSession = useRef(false);
 
   // Use state so it triggers re-render when detected
   const [isReturningSession, setIsReturningSession] = useState(false);
 
-  // Check on mount: if there's saved data and no active editing session flag
+  // Check on mount: clear session flag and detect if there's saved data
   useEffect(() => {
-    const hasActiveSession = sessionStorage.getItem(SESSION_FLAG_KEY);
+    if (!SESSION_FLAG_KEY) return;
 
-    if (savedData && !hasActiveSession) {
+    // Clear the session flag on mount - this ensures the banner shows on reload
+    sessionStorage.removeItem(SESSION_FLAG_KEY);
+
+    // If there's saved data, user is returning
+    if (savedData) {
       setIsReturningSession(true);
     }
   }, []);
@@ -117,6 +180,8 @@ const Create = () => {
   const formData = watch();
 
   useEffect(() => {
+    if (!FORM_STORAGE_KEY || !user) return;
+
     const hasFormData =
       formData.name ||
       formData.description ||
@@ -130,30 +195,37 @@ const Create = () => {
 
     if (hasFormData || hasPhotos) {
       const dataToSave = {
+        userId: user.uid,
         formData,
         photoUrls,
         timestamp: Date.now(),
       };
       localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(dataToSave));
     }
-  }, [formData, photoUrls]);
+  }, [formData, photoUrls, FORM_STORAGE_KEY, user]);
 
   useEffect(() => {
+    if (!SESSION_FLAG_KEY) return;
+
     const subscription = watch(() => {
       if (!hasUserEditedInThisSession.current) {
         hasUserEditedInThisSession.current = true;
         sessionStorage.setItem(SESSION_FLAG_KEY, "true");
+        // Hide the banner once user starts editing
+        setIsReturningSession(false);
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, SESSION_FLAG_KEY]);
 
   // Handle image upload callback
   const handleImageUploaded = (url: string) => {
     // Mark session as active on image upload
-    if (!hasUserEditedInThisSession.current) {
+    if (!hasUserEditedInThisSession.current && SESSION_FLAG_KEY) {
       hasUserEditedInThisSession.current = true;
       sessionStorage.setItem(SESSION_FLAG_KEY, "true");
+      // Hide the banner once user starts editing
+      setIsReturningSession(false);
     }
 
     setPhotoUrls((prev) => [...prev, url]);
@@ -166,19 +238,10 @@ const Create = () => {
         "¿Estás seguro de que deseas limpiar el borrador? Se perderán todos los datos del formulario."
       )
     ) {
-      reset({
-        name: "",
-        description: "",
-        birthDate: "",
-        gender: "",
-        breed: "",
-        isCastrated: false,
-        medicalInformation: "",
-        temperament: "",
-      });
+      reset(FORM_DEFAULT_VALUES);
       setPhotoUrls([]);
-      localStorage.removeItem(FORM_STORAGE_KEY);
-      sessionStorage.removeItem(SESSION_FLAG_KEY);
+      if (FORM_STORAGE_KEY) localStorage.removeItem(FORM_STORAGE_KEY);
+      if (SESSION_FLAG_KEY) sessionStorage.removeItem(SESSION_FLAG_KEY);
       setIsReturningSession(false);
       hasUserEditedInThisSession.current = false;
     }
@@ -207,13 +270,13 @@ const Create = () => {
   };
 
   const onSubmit = async (data: PetFormData) => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
     try {
-      const petData: any = {
-        ownerId: user?.uid,
+      if (!user) {
+        return;
+      }
+
+      const petData: CreatePetData = {
+        ownerId: user.uid,
         name: data.name,
         description: data.description,
         birthDate: data.birthDate,
@@ -226,47 +289,25 @@ const Create = () => {
       if (data.medicalInformation && data.medicalInformation.trim()) {
         petData.medicalInformation = data.medicalInformation;
       }
+
       if (data.temperament && data.temperament.trim()) {
         petData.temperament = data.temperament;
       }
 
-      const response = await api.post("/pets", petData);
-      if (response.data) {
-        if (fromTagActivation) {
-          setSuccess(
-            "¡Mascota registrada! Redirigiendo para activar tu chapita..."
-          );
-        } else {
-          setSuccess("¡Mascota registrada exitosamente!");
-        }
-      }
+      await dispatch(createPet(petData)).unwrap();
 
-      reset({
-        name: "",
-        description: "",
-        birthDate: "",
-        gender: "",
-        breed: "",
-        isCastrated: false,
-        medicalInformation: "",
-        temperament: "",
-      });
+      reset(FORM_DEFAULT_VALUES);
       setPhotoUrls([]);
-      localStorage.removeItem(FORM_STORAGE_KEY);
-      sessionStorage.removeItem(SESSION_FLAG_KEY);
+      if (FORM_STORAGE_KEY) localStorage.removeItem(FORM_STORAGE_KEY);
+      if (SESSION_FLAG_KEY) sessionStorage.removeItem(SESSION_FLAG_KEY);
 
       setTimeout(() => {
-        if (fromTagActivation && redirectTo) {
-          navigate(redirectTo);
-        } else {
-          navigate("/dashboard");
-        }
-      }, 2000);
+        const destination =
+          fromTagActivation && redirectTo ? redirectTo : "/dashboard";
+        navigate(destination);
+      }, 1500);
     } catch (err: any) {
-      setError(err.message || "Error al registrar la mascota");
-      console.log(err);
-    } finally {
-      setLoading(false);
+      console.error("Error creating pet:", err);
     }
   };
 
