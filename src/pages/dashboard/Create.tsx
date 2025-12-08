@@ -156,6 +156,7 @@ const Create = () => {
   const [photoUrls, setPhotoUrls] = useState<string[]>(
     savedData?.photoUrls || []
   );
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const {
     register,
@@ -576,6 +577,7 @@ const Create = () => {
               petName={formData.name || "pet"}
               maxImages={1}
               currentImages={photoUrls}
+              onUploadingChange={setUploadingImage}
             />
           </div>
 
@@ -593,10 +595,10 @@ const Create = () => {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingImage}
               className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
-              {loading ? "Registrando..." : "Registrar Mascota"}
+              {uploadingImage ? "Subiendo imagen..." : loading ? "Registrando..." : "Registrar Mascota"}
             </button>
           </div>
         </form>

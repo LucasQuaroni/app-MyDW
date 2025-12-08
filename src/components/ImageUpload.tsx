@@ -8,6 +8,7 @@ interface ImageUploadProps {
   petName?: string;
   maxImages?: number;
   currentImages?: string[];
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 export const ImageUpload = ({
@@ -15,6 +16,7 @@ export const ImageUpload = ({
   petName = "pet",
   maxImages = 5,
   currentImages = [],
+  onUploadingChange,
 }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -97,6 +99,7 @@ export const ImageUpload = ({
 
   const uploadImage = async (file: File) => {
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       // Create unique filename with timestamp
       const timestamp = Date.now();
@@ -126,6 +129,7 @@ export const ImageUpload = ({
       throw error; // Re-throw to be caught by caller
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
     }
   };
 
