@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { api } from "../../config/axios";
-import IPets, { TagInfo } from "../../types/PetsType";
+import IPets, { TagInfo, CreatePetData } from "../../types/PetsType";
 import { selectUser } from "../auth/authSlice";
 import { RootState } from "../../store/store";
 
@@ -25,7 +25,7 @@ export const fetchPets = createAsyncThunk<
 
 export const createPet = createAsyncThunk<
   IPets,
-  IPets,
+  CreatePetData,
   { rejectValue: string }
 >("pets/createPet", async (pet, { rejectWithValue }) => {
   try {
@@ -170,6 +170,7 @@ const petsSlice = createSlice({
     pets: [] as IPets[],
     loading: false,
     error: null as string | null,
+    success: null as string | null,
     // Tag-related state
     tagInfo: null as TagInfo | null,
     tagLoading: false,
@@ -196,10 +197,15 @@ const petsSlice = createSlice({
     },
     clearErrors: (state) => {
       state.error = null;
+      state.success = null;
       state.tagError = null;
       state.availablePetsError = null;
       state.activationError = null;
       state.lostPetsError = null;
+    },
+    clearPetMessages: (state) => {
+      state.error = null;
+      state.success = null;
     },
   },
   extraReducers: (builder) => {
@@ -221,10 +227,13 @@ const petsSlice = createSlice({
     });
     builder.addCase(createPet.fulfilled, (state, action) => {
       state.loading = false;
+      state.error = null;
+      state.success = "¡Mascota registrada exitosamente!";
       state.pets = [...state.pets, action.payload];
     });
     builder.addCase(createPet.rejected, (state, action) => {
       state.loading = false;
+      state.success = null;
       state.error = action.payload ?? "Error al crear la mascota";
     });
     // updatePet handlers
@@ -234,7 +243,9 @@ const petsSlice = createSlice({
     });
     builder.addCase(updatePet.fulfilled, (state, action) => {
       state.loading = false;
-      const index = state.pets.findIndex((pet) => pet._id === action.payload._id);
+      const index = state.pets.findIndex(
+        (pet) => pet._id === action.payload._id
+      );
       if (index !== -1) {
         state.pets[index] = action.payload;
       }
@@ -308,14 +319,17 @@ const petsSlice = createSlice({
     });
     builder.addCase(toggleLostStatus.fulfilled, (state, action) => {
       state.loading = false;
-      const index = state.pets.findIndex((pet) => pet._id === action.payload._id);
+      const index = state.pets.findIndex(
+        (pet) => pet._id === action.payload._id
+      );
       if (index !== -1) {
         state.pets[index] = action.payload;
       }
     });
     builder.addCase(toggleLostStatus.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload ?? "Error al actualizar el estado de la mascota";
+      state.error =
+        action.payload ?? "Error al actualizar el estado de la mascota";
     });
     // fetchLostPets handlers
     builder.addCase(fetchLostPets.pending, (state) => {
@@ -334,5 +348,6 @@ const petsSlice = createSlice({
   },
 });
 
-export const { setPets, clearTagInfo, clearErrors } = petsSlice.actions;
+export const { setPets, clearTagInfo, clearErrors, clearPetMessages } =
+  petsSlice.actions;
 export default petsSlice.reducer;

@@ -43,4 +43,17 @@ export interface TagInfo {
   };
 }
 
+export type CreatePetData = {
+  ownerId: string;
+  name: string;
+  description: string;
+  birthDate: string;
+  gender: string;
+  breed: string;
+  isCastrated: boolean;
+  photos: string[];
+  medicalInformation?: string;
+  temperament?: string;
+};
+
 export default IPets;
