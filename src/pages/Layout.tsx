@@ -79,8 +79,7 @@ const Layout = () => {
                   </Link>
                 )}
 
-                {/* fix temporal para POC */}
-                {user?.email?.includes("admin") && (
+                {user?.isAdmin && (
                   <Link
                     className="text-gray-300 hover:text-orange-400 hover:bg-gray-800 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                     to="/admin/tags"
@@ -190,7 +189,7 @@ const Layout = () => {
                   Mis mascotas
                 </Link>
               )}
-              {user?.email?.includes("admin") && (
+              {user?.isAdmin && (
                 <Link
                   className="text-gray-300 hover:text-orange-400 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
                   to="/admin/tags"

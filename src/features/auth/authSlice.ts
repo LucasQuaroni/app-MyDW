@@ -22,6 +22,7 @@ export interface AuthUser {
   email: string | null;
   token: string;
   role?: string;
+  isAdmin?: boolean;
 }
 
 interface AuthState {
@@ -60,10 +61,20 @@ export const registerUser = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
+    // Fetch user data from backend to get isAdmin
+    let isAdmin = false;
+    try {
+      const response = await api.get(`/users/${user.uid}`);
+      isAdmin = response.data.isAdmin || false;
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+
     return {
       uid: user.uid,
       email: user.email,
       token,
+      isAdmin,
     };
   } catch (error: any) {
     return rejectWithValue(error.message || "Registration failed");
@@ -87,10 +98,20 @@ export const loginUser = createAsyncThunk<
     const token = await user.getIdToken();
     localStorage.setItem("token", token);
 
+    // Fetch user data from backend to get isAdmin
+    let isAdmin = false;
+    try {
+      const response = await api.get(`/users/${user.uid}`);
+      isAdmin = response.data.isAdmin || false;
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+
     return {
       uid: user.uid,
       email: user.email,
       token,
+      isAdmin,
     };
   } catch (error: any) {
     return rejectWithValue(error.message || "Login failed");
@@ -112,16 +133,19 @@ export const loginWithGoogle = createAsyncThunk<
     localStorage.setItem("token", token);
 
     // Verificar si el usuario existe en la base de datos, si no, crearlo
+    let isAdmin = false;
     try {
-      await api.get(`/users/${user.uid}`);
+      const userResponse = await api.get(`/users/${user.uid}`);
+      isAdmin = userResponse.data.isAdmin || false;
     } catch (error: any) {
       // Si el usuario no existe, crearlo
       if (error.response?.status === 404) {
         try {
-          await api.post("/users/google", {
+          const createResponse = await api.post("/users/google", {
             uid: user.uid,
             email: user.email,
           });
+          isAdmin = createResponse.data.isAdmin || false;
         } catch (createError) {
           console.error("Error creating user in backend:", createError);
         }
@@ -132,6 +156,7 @@ export const loginWithGoogle = createAsyncThunk<
       uid: user.uid,
       email: user.email,
       token,
+      isAdmin,
     };
   } catch (error: any) {
     return rejectWithValue(error.message || "Google login failed");
@@ -161,7 +186,17 @@ export const observeUser = createAsyncThunk<void, void, { dispatch: Dispatch }>(
           if (user) {
             const token = await user.getIdToken();
             localStorage.setItem("token", token);
-            dispatch(setUser({ uid: user.uid, email: user.email, token }));
+            
+            // Fetch user data from backend to get isAdmin
+            let isAdmin = false;
+            try {
+              const response = await api.get(`/users/${user.uid}`);
+              isAdmin = response.data.isAdmin || false;
+            } catch (error) {
+              console.error("Error fetching user data:", error);
+            }
+            
+            dispatch(setUser({ uid: user.uid, email: user.email, token, isAdmin }));
           } else {
             localStorage.removeItem("token");
             dispatch(clearUser());
