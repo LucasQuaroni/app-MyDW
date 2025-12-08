@@ -278,7 +278,7 @@ const UserDashboard = () => {
                   key={pet._id}
                   className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
                 >
-                  <Link to={`/pet/${pet.tagId}`}>
+                  <Link to={pet.tagId ? `/pet/${pet.tagId}` : `/pet/chapitas`}>
                     {pet.photos && pet.photos.length > 0 ? (
                       <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 overflow-hidden">
                         <img
@@ -300,6 +300,11 @@ const UserDashboard = () => {
                         PERDIDA
                       </span>
                     )}
+                    {!pet.tagId && (
+                      <span className="ml-2 text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full">
+                        SIN CHAPITA
+                      </span>
+                    )}
                   </h3>
                   <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
                   {pet?.gender && (
@@ -310,6 +315,15 @@ const UserDashboard = () => {
                       </span>
                     </div>
                   )}
+
+                  {!pet.tagId && (
+                    <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-2 mb-2">
+                      <p className="text-xs text-amber-300 text-center">
+                        🏷️ Haz clic en la imagen para vincular una chapita
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex flex-col gap-2 mt-3">
                     <div className="flex gap-2">
                     <button
