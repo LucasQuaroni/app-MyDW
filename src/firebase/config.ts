@@ -19,17 +19,45 @@ import { getStorage } from "firebase/storage";
  * 5. Si no tienes una app web, haz clic en "</>" (Add app > Web)
  * 6. Copia las credenciales que aparecen en el objeto firebaseConfig
  *
- * O usa variables de entorno creando un archivo .env en la raíz de app-MyDW/
+ * Las credenciales se cargan desde variables de entorno (archivo .env)
+ * IMPORTANTE: En Vite, las variables de entorno deben tener el prefijo VITE_
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyBo7Do450OM8j5u9aFy8ukgda9mn6xhJQg",
-  authDomain: "app-mydw.firebaseapp.com",
-  projectId: "app-mydw",
-  storageBucket: "app-mydw.firebasestorage.app",
-  messagingSenderId: "322500738959",
-  appId: "1:322500738959:web:fb297596995187011fd5fa",
-  measurementId: "G-2B88P0CHXB",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "",
 };
+
+// Validar que las variables de entorno requeridas estén presentes
+const requiredEnvVars = [
+  "VITE_FIREBASE_API_KEY",
+  "VITE_FIREBASE_AUTH_DOMAIN",
+  "VITE_FIREBASE_PROJECT_ID",
+  "VITE_FIREBASE_STORAGE_BUCKET",
+  "VITE_FIREBASE_MESSAGING_SENDER_ID",
+  "VITE_FIREBASE_APP_ID",
+];
+
+const missingVars = requiredEnvVars.filter(
+  (varName) => !import.meta.env[varName] || import.meta.env[varName] === ""
+);
+
+if (missingVars.length > 0) {
+  console.error(
+    "\n❌ Error: Faltan las siguientes variables de entorno de Firebase:"
+  );
+  missingVars.forEach((varName) => console.error(`   - ${varName}`));
+  console.error(
+    "\n📝 Por favor, crea un archivo .env en la raíz del proyecto (app-MyDW/) con las credenciales de Firebase."
+  );
+  console.error(
+    "   Puedes usar .env.example como referencia.\n"
+  );
+}
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
