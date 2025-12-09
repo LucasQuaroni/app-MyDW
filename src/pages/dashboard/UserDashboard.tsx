@@ -10,6 +10,7 @@ import {
   deletePet,
   toggleLostStatus,
 } from "../../features/pets/petsSlice";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const UserDashboard = () => {
   const dispatch = useAppDispatch();
@@ -18,53 +19,91 @@ const UserDashboard = () => {
   const { pets, loading, error } = useAppSelector((state) => state.pets);
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
   const [togglingLostId, setTogglingLostId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    petId: string | null;
+    petName: string;
+  }>({
+    isOpen: false,
+    petId: null,
+    petName: "",
+  });
+  const [toggleLostModal, setToggleLostModal] = useState<{
+    isOpen: boolean;
+    petId: string | null;
+    petName: string;
+    currentStatus: boolean;
+  }>({
+    isOpen: false,
+    petId: null,
+    petName: "",
+    currentStatus: false,
+  });
 
   useEffect(() => {
     dispatch(fetchPets());
   }, [dispatch]);
 
-  const handleDelete = async (petId: string, petName: string) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de que deseas eliminar a ${petName}? Esta acción no se puede deshacer.`
-      )
-    ) {
-      try {
-        setDeletingPetId(petId);
-        await dispatch(deletePet(petId)).unwrap();
-      } catch (error) {
-        console.error("Error al eliminar mascota:", error);
-        alert("Error al eliminar la mascota. Por favor, intenta de nuevo.");
-      } finally {
-        setDeletingPetId(null);
-      }
+  const handleDeleteClick = (petId: string, petName: string) => {
+    setDeleteModal({
+      isOpen: true,
+      petId,
+      petName,
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.petId) return;
+
+    try {
+      setDeletingPetId(deleteModal.petId);
+      await dispatch(deletePet(deleteModal.petId)).unwrap();
+      setDeleteModal({ isOpen: false, petId: null, petName: "" });
+    } catch (error) {
+      console.error("Error al eliminar mascota:", error);
+      alert("Error al eliminar la mascota. Por favor, intenta de nuevo.");
+    } finally {
+      setDeletingPetId(null);
     }
   };
 
-  const handleToggleLost = async (
+  const handleToggleLostClick = (
     petId: string,
     currentStatus: boolean,
     petName: string
   ) => {
-    const action = currentStatus ? "desmarcar" : "marcar";
-    const message = currentStatus
-      ? `¿Deseas marcar como encontrada a ${petName}?`
-      : `¿Deseas marcar como perdida a ${petName}? Esto hará que aparezca en la página pública de mascotas perdidas.`;
+    setToggleLostModal({
+      isOpen: true,
+      petId,
+      petName,
+      currentStatus,
+    });
+  };
 
-    if (window.confirm(message)) {
-      try {
-        setTogglingLostId(petId);
-        await dispatch(
-          toggleLostStatus({ id: petId, isLost: !currentStatus })
-        ).unwrap();
-      } catch (error) {
-        console.error("Error al actualizar estado:", error);
-        alert(
-          `Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`
-        );
-      } finally {
-        setTogglingLostId(null);
-      }
+  const handleToggleLostConfirm = async () => {
+    if (!toggleLostModal.petId) return;
+
+    const { petId, currentStatus, petName } = toggleLostModal;
+    const action = currentStatus ? "desmarcar" : "marcar";
+
+    try {
+      setTogglingLostId(petId);
+      await dispatch(
+        toggleLostStatus({ id: petId, isLost: !currentStatus })
+      ).unwrap();
+      setToggleLostModal({
+        isOpen: false,
+        petId: null,
+        petName: "",
+        currentStatus: false,
+      });
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+      alert(
+        `Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`
+      );
+    } finally {
+      setTogglingLostId(null);
     }
   };
 
@@ -357,7 +396,7 @@ const UserDashboard = () => {
                         Editar
                       </button>
                       <button
-                        onClick={() => handleDelete(pet._id, pet.name)}
+                        onClick={() => handleDeleteClick(pet._id, pet.name)}
                         disabled={deletingPetId === pet._id}
                         className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Eliminar mascota"
@@ -386,7 +425,7 @@ const UserDashboard = () => {
                     </div>
                     <button
                       onClick={() =>
-                        handleToggleLost(pet._id, pet.isLost || false, pet.name)
+                        handleToggleLostClick(pet._id, pet.isLost || false, pet.name)
                       }
                       disabled={togglingLostId === pet._id}
                       className={`w-full py-2 px-3 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -445,6 +484,47 @@ const UserDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de Confirmación para Eliminar */}
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() =>
+          setDeleteModal({ isOpen: false, petId: null, petName: "" })
+        }
+        onConfirm={handleDeleteConfirm}
+        title="Confirmar Eliminación"
+        message={`¿Estás seguro de que deseas eliminar a ${deleteModal.petName}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmButtonColor="red"
+      />
+
+      {/* Modal de Confirmación para Toggle Lost Status */}
+      <ConfirmModal
+        isOpen={toggleLostModal.isOpen}
+        onClose={() =>
+          setToggleLostModal({
+            isOpen: false,
+            petId: null,
+            petName: "",
+            currentStatus: false,
+          })
+        }
+        onConfirm={handleToggleLostConfirm}
+        title={
+          toggleLostModal.currentStatus
+            ? "Marcar como Encontrada"
+            : "Marcar como Perdida"
+        }
+        message={
+          toggleLostModal.currentStatus
+            ? `¿Deseas marcar como encontrada a ${toggleLostModal.petName}?`
+            : `¿Deseas marcar como perdida a ${toggleLostModal.petName}? Esto hará que aparezca en la página pública de mascotas perdidas.`
+        }
+        confirmText={toggleLostModal.currentStatus ? "Marcar Encontrada" : "Marcar Perdida"}
+        cancelText="Cancelar"
+        confirmButtonColor={toggleLostModal.currentStatus ? "green" : "orange"}
+      />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { ImageUpload } from "../../components/ImageUpload";
 import { createPet, clearPetMessages } from "../../features/pets/petsSlice";
 import { CreatePetData } from "../../types/PetsType";
+import ConfirmModal from "../../components/ConfirmModal";
 
 // Helper functions to get user-scoped storage keys
 const getFormStorageKey = (userId: string) =>
@@ -149,6 +150,7 @@ const Create = () => {
     savedData?.photoUrls || []
   );
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showClearDraftModal, setShowClearDraftModal] = useState(false);
 
   const {
     register,
@@ -221,19 +223,18 @@ const Create = () => {
   };
 
   // Clear draft manually
-  const clearDraft = () => {
-    if (
-      window.confirm(
-        "¿Estás seguro de que deseas limpiar el borrador? Se perderán todos los datos del formulario."
-      )
-    ) {
-      reset(FORM_DEFAULT_VALUES);
-      setPhotoUrls([]);
-      if (FORM_STORAGE_KEY) localStorage.removeItem(FORM_STORAGE_KEY);
-      if (SESSION_FLAG_KEY) sessionStorage.removeItem(SESSION_FLAG_KEY);
-      setIsReturningSession(false);
-      hasUserEditedInThisSession.current = false;
-    }
+  const handleClearDraftClick = () => {
+    setShowClearDraftModal(true);
+  };
+
+  const handleClearDraftConfirm = () => {
+    reset(FORM_DEFAULT_VALUES);
+    setPhotoUrls([]);
+    if (FORM_STORAGE_KEY) localStorage.removeItem(FORM_STORAGE_KEY);
+    if (SESSION_FLAG_KEY) sessionStorage.removeItem(SESSION_FLAG_KEY);
+    setIsReturningSession(false);
+    hasUserEditedInThisSession.current = false;
+    setShowClearDraftModal(false);
   };
 
   const shouldShowRestoredBanner = () => {
@@ -344,7 +345,7 @@ const Create = () => {
             </div>
             <button
               type="button"
-              onClick={clearDraft}
+              onClick={handleClearDraftClick}
               className="text-gray-400 hover:text-red-400 transition-colors ml-4 text-sm"
               title="Limpiar borrador"
             >
@@ -592,6 +593,18 @@ const Create = () => {
           </div>
         </form>
       </div>
+
+      {/* Modal de Confirmación para Limpiar Borrador */}
+      <ConfirmModal
+        isOpen={showClearDraftModal}
+        onClose={() => setShowClearDraftModal(false)}
+        onConfirm={handleClearDraftConfirm}
+        title="Limpiar Borrador"
+        message="¿Estás seguro de que deseas limpiar el borrador? Se perderán todos los datos del formulario."
+        confirmText="Limpiar"
+        cancelText="Cancelar"
+        confirmButtonColor="orange"
+      />
     </div>
   );
 };

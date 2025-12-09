@@ -1,8 +1,17 @@
 import { Link } from "react-router-dom";
-import { useAppSelector } from "./hooks/redux";
+import { useEffect } from "react";
+import { useAppSelector, useAppDispatch } from "./hooks/redux";
+import { fetchLostPets } from "./features/pets/petsSlice";
 
 function App() {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { lostPets } = useAppSelector((state) => state.pets);
+
+  useEffect(() => {
+    // Cargar mascotas perdidas para mostrar estadísticas
+    dispatch(fetchLostPets());
+  }, [dispatch]);
 
   return (
     <div className="space-y-20">
@@ -195,6 +204,56 @@ function App() {
               para un miembro de tu familia. Porque sabemos que tu mascota es
               más que un animal, es parte de tu vida.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Estadísticas desde el Backend */}
+      <section className="max-w-5xl mx-auto">
+        <div className="bg-gray-800 rounded-2xl p-8 md:p-12 border border-gray-700">
+          <div className="text-center space-y-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">
+              Estadísticas en Tiempo Real
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                <div className="text-4xl font-bold text-orange-400 mb-2">
+                  {lostPets.length}
+                </div>
+                <div className="text-gray-300 text-lg">
+                  Mascotas Perdidas Actualmente
+                </div>
+                <Link
+                  to="/lost-pets"
+                  className="mt-4 inline-block text-orange-400 hover:text-orange-300 text-sm font-semibold transition-colors"
+                >
+                  Ver todas →
+                </Link>
+              </div>
+              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
+                <div className="text-4xl font-bold text-green-400 mb-2">
+                  {lostPets.length > 0 ? "Activo" : "Sin reportes"}
+                </div>
+                <div className="text-gray-300 text-lg">
+                  Sistema de Búsqueda
+                </div>
+                <p className="mt-4 text-gray-400 text-sm">
+                  {lostPets.length > 0
+                    ? "Ayuda a reunir estas mascotas con sus familias"
+                    : "Todas las mascotas están seguras en casa"}
+                </p>
+              </div>
+            </div>
+            {lostPets.length > 0 && (
+              <div className="mt-6">
+                <Link
+                  to="/lost-pets"
+                  className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  Ver Mascotas Perdidas
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
