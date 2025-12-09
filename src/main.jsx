@@ -8,6 +8,7 @@ import About from "./pages/About.tsx";
 import Contact from "./pages/Contact.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
+import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
 import Create from "./pages/dashboard/Create.tsx";
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
         path: "admin/tags",
         Component: TagGenerator,
         errorElement: <div>Error</div>,
+      },
+      {
+        path: "*",
+        Component: NotFound,
       },
     ],
   },
