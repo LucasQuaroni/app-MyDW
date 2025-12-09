@@ -15,6 +15,7 @@ import {
 import { RootState } from "../../store/store";
 import { auth } from "../../firebase/config";
 import { api } from "../../config/axios";
+import { getFirebaseErrorMessage, extractErrorCode } from "../../utils/firebaseErrors";
 
 export interface AuthUser {
   uid: string;
@@ -72,7 +73,24 @@ export const registerUser = createAsyncThunk<
       isAdmin,
     };
   } catch (error: any) {
-    return rejectWithValue(error.message || "Registration failed");
+    console.error("Registration error:", error);
+    
+    if (error?.response?.data?.error) {
+      return rejectWithValue(error.response.data.error);
+    }
+
+    const errorCode = extractErrorCode(error);
+    if (errorCode) {
+      return rejectWithValue(getFirebaseErrorMessage(errorCode));
+    }
+
+    if (error?.code === "ERR_NETWORK" || error?.message?.includes("Network")) {
+      return rejectWithValue("Error de conexión. Verifica tu conexión a internet.");
+    }
+
+    return rejectWithValue(
+      error?.message || "Ocurrió un error al crear tu cuenta. Por favor intenta de nuevo."
+    );
   }
 });
 
@@ -107,7 +125,30 @@ export const loginUser = createAsyncThunk<
       isAdmin,
     };
   } catch (error: any) {
-    return rejectWithValue(error.message || "Login failed");
+    console.error("Login error:", error);
+    
+    // Errores específicos de inicio de sesión
+    if (
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/user-not-found" ||
+      error.code === "auth/invalid-email" ||
+      error.code === "auth/invalid-credential"
+    ) {
+      return rejectWithValue("El correo o la contraseña son incorrectos");
+    }
+
+    // Usar la utilidad para otros errores de Firebase
+    const errorCode = extractErrorCode(error);
+    if (errorCode) {
+      return rejectWithValue(getFirebaseErrorMessage(errorCode));
+    }
+
+    // Errores de red
+    if (error?.code === "ERR_NETWORK" || error?.message?.includes("Network")) {
+      return rejectWithValue("Error de conexión. Verifica tu conexión a internet.");
+    }
+
+    return rejectWithValue(error.message || "Ocurrió un error al iniciar sesión. Por favor intenta de nuevo.");
   }
 });
 
@@ -149,7 +190,20 @@ export const loginWithGoogle = createAsyncThunk<
       isAdmin,
     };
   } catch (error: any) {
-    return rejectWithValue(error.message || "Google login failed");
+    console.error("Google login error:", error);
+    
+    // Usar la utilidad para errores de Firebase
+    const errorCode = extractErrorCode(error);
+    if (errorCode) {
+      return rejectWithValue(getFirebaseErrorMessage(errorCode));
+    }
+
+    // Errores de red
+    if (error?.code === "ERR_NETWORK" || error?.message?.includes("Network")) {
+      return rejectWithValue("Error de conexión. Verifica tu conexión a internet.");
+    }
+
+    return rejectWithValue(error.message || "Ocurrió un error al iniciar sesión con Google. Por favor intenta de nuevo.");
   }
 });
 
@@ -228,7 +282,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Registration failed";
+        state.error = action.payload || "Fallo el registro";
       })
 
       // Login
