@@ -13,13 +13,16 @@ const getApiBaseURL = (): string => {
   if (import.meta.env.PROD) {
     if (!apiUrl) {
       console.error(
-        "❌ VITE_API_URL no está configurada en producción. " +
-        "Por favor, configura la variable de entorno VITE_API_URL con la URL de tu API en producción."
+        "❌ VITE_API_URL no está configurada en producción.\n" +
+        "Por favor, configura la variable de entorno VITE_API_URL con la URL completa de tu API.\n" +
+        "Ejemplo: https://app-my-dw.vercel.app/api"
       );
-      // Retornar una URL vacía para que falle de manera clara
-      return "";
+      // Usar la URL del backend en Vercel como fallback temporal
+      // IMPORTANTE: Debes configurar VITE_API_URL en producción
+      return "https://app-my-dw.vercel.app/api";
     }
-    return apiUrl;
+    // Asegurarse de que la URL termine con /api
+    return apiUrl.endsWith("/api") ? apiUrl : `${apiUrl}/api`;
   }
   
   // En desarrollo, usar localhost como fallback
