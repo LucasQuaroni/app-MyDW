@@ -187,22 +187,22 @@ const UserDashboard = () => {
               <p className="text-gray-400 text-xs md:text-sm mb-1 md:mb-2">
                 Total de mascotas:{" "}
                 <span className="text-gray-100 font-semibold">
-                  {pets.length}
+                  {Array.isArray(pets) ? pets.length : 0}
                 </span>
               </p>
               <p className="text-gray-400 text-xs md:text-sm">
                 Registradas este mes:{" "}
                 <span className="text-gray-100 font-semibold">
-                  {
-                    pets.filter((pet) => {
-                      const petDate = new Date(pet.createdAt);
-                      const now = new Date();
-                      return (
-                        petDate.getMonth() === now.getMonth() &&
-                        petDate.getFullYear() === now.getFullYear()
-                      );
-                    }).length
-                  }
+                  {Array.isArray(pets)
+                    ? pets.filter((pet) => {
+                        const petDate = new Date(pet.createdAt);
+                        const now = new Date();
+                        return (
+                          petDate.getMonth() === now.getMonth() &&
+                          petDate.getFullYear() === now.getFullYear()
+                        );
+                      }).length
+                    : 0}
                 </span>
               </p>
             </div>
@@ -280,7 +280,7 @@ const UserDashboard = () => {
               </div>
               <p className="text-red-400">{error}</p>
             </div>
-          ) : pets.length === 0 ? (
+          ) : !Array.isArray(pets) || pets.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -322,7 +322,7 @@ const UserDashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pets.slice(0, 6).map((pet) => (
+              {Array.isArray(pets) && pets.slice(0, 6).map((pet) => (
                 <div
                   key={pet._id}
                   className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"

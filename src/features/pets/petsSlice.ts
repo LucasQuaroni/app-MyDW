@@ -15,7 +15,8 @@ export const fetchPets = createAsyncThunk<
       return rejectWithValue("Usuario no autenticado");
     }
     const response = await api.get(`/pets/owner/${user.uid}`);
-    return response.data;
+    // Asegurar que siempre devolvamos un array
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || "Error al cargar las mascotas"
@@ -239,11 +240,16 @@ const petsSlice = createSlice({
     });
     builder.addCase(fetchPets.fulfilled, (state, action) => {
       state.loading = false;
-      state.pets = action.payload;
+      // Asegurar que siempre sea un array
+      state.pets = Array.isArray(action.payload) ? action.payload : [];
     });
     builder.addCase(fetchPets.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload ?? "Error al cargar las mascotas";
+      // Asegurar que pets siempre sea un array incluso en caso de error
+      if (!Array.isArray(state.pets)) {
+        state.pets = [];
+      }
     });
     builder.addCase(createPet.pending, (state) => {
       state.loading = true;
