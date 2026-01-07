@@ -1,8 +1,33 @@
 import axios from "axios";
 import { auth } from "../firebase/config";
 
+/**
+ * Determina la URL base de la API
+ * - En producción: requiere VITE_API_URL configurada
+ * - En desarrollo: usa localhost como fallback
+ */
+const getApiBaseURL = (): string => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  // En producción, no usar localhost como fallback
+  if (import.meta.env.PROD) {
+    if (!apiUrl) {
+      console.error(
+        "❌ VITE_API_URL no está configurada en producción. " +
+        "Por favor, configura la variable de entorno VITE_API_URL con la URL de tu API en producción."
+      );
+      // Retornar una URL vacía para que falle de manera clara
+      return "";
+    }
+    return apiUrl;
+  }
+  
+  // En desarrollo, usar localhost como fallback
+  return apiUrl || "http://localhost:3019/api";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3019/api",
+  baseURL: getApiBaseURL(),
 });
 
 api.interceptors.request.use(
