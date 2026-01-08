@@ -10,6 +10,16 @@ import {
   fetchPetById,
   clearCurrentPet,
 } from "../../features/pets/petsSlice";
+import {
+  ArrowLeft,
+  Save,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Edit as EditIcon,
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 
 const petSchema = Joi.object({
   name: Joi.string().required().messages({
@@ -150,157 +160,186 @@ const EditPet = () => {
 
   if (loadingPet) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <svg
-              className="w-8 h-8 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+      <div className="w-full max-w-4xl mx-auto px-4 pb-8">
+        <div className="text-center py-16 md:py-24">
+          <div className="relative inline-block mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500/20 border-t-orange-500 mx-auto"></div>
+            <EditIcon className="absolute inset-0 m-auto w-8 h-8 text-orange-500 animate-pulse" />
           </div>
-          <p className="text-gray-400">Cargando mascota...</p>
+          <p className="text-white text-lg md:text-xl font-medium">
+            Cargando información de la mascota...
+          </p>
+          <p className="text-gray-400 text-sm md:text-base mt-2">
+            Estamos preparando el formulario de edición
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center text-gray-400 hover:text-orange-500 transition-colors mb-4"
+    <div className="w-full max-w-4xl mx-auto px-4 pb-8">
+      {/* Header - Mobile First */}
+      <div className="mb-6 md:mb-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="mb-4 md:mb-6 text-gray-400 hover:text-orange-500 hover:bg-orange-500/10 transition-all duration-200"
         >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Volver al Dashboard
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-100 mb-2">
-          Editar Mascota
-        </h1>
-        <p className="text-gray-400">
-          Actualiza la información de {currentPet?.name}
-        </p>
+          <Link to="/dashboard">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver al Dashboard
+          </Link>
+        </Button>
+        <div>
+          <div className="inline-flex items-center gap-2 mb-4 md:mb-6 px-4 py-2 md:px-5 md:py-2.5 bg-orange-500/10 text-orange-400 rounded-full text-sm md:text-base font-medium border border-orange-500/20 backdrop-blur-sm">
+            <EditIcon className="w-4 h-4 md:w-5 md:h-5" />
+            <span>Editar Mascota</span>
+          </div>
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-3 leading-tight">
+            <span className="block mb-2">Actualiza la información de</span>
+            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+              {currentPet?.name || "tu mascota"}
+            </span>
+          </h1>
+          <p className="text-sm md:text-base text-gray-400 leading-relaxed">
+            Modifica los datos de tu mascota y guarda los cambios
+          </p>
+        </div>
       </div>
 
-      <div className="bg-gray-800 rounded-3xl shadow-md p-6 border border-gray-700">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <div
-              className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded-2xl text-sm"
-              role="alert"
-            >
-              <span className="block">{error}</span>
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+        {/* Error/Success Messages */}
+        {error && (
+          <Card className="border-red-700/50 bg-red-900/20">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm md:text-base text-red-300 font-semibold">
+                    Error al actualizar
+                  </p>
+                  <p className="text-xs md:text-sm text-red-200 mt-1">{error}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {success && (
-            <div
-              className="bg-green-900/30 border border-green-800 text-green-300 px-4 py-3 rounded-2xl text-sm"
-              role="alert"
-            >
-              <span className="block">{success}</span>
-            </div>
-          )}
+        {success && (
+          <Card className="border-green-700/50 bg-green-900/20">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-green-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm md:text-base text-green-300 font-semibold">
+                    {success}
+                  </p>
+                  <p className="text-xs md:text-sm text-green-200 mt-1">
+                    Redirigiendo al dashboard...
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-100 border-b border-gray-700 pb-2">
+        {/* Basic Information Card */}
+        <Card className="border-gray-700 bg-gray-800/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl font-semibold text-gray-100">
               Información Básica
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm text-gray-400">
+              Los campos marcados con <span className="text-red-500">*</span> son obligatorios
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <div className="space-y-2">
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                  className="block text-sm font-medium text-gray-300"
                 >
                   Nombre <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="name"
                   type="text"
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  className={`w-full px-4 py-3 bg-gray-900 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 text-base ${
+                    errors.name ? "border-red-500" : "border-gray-700"
+                  }`}
                   placeholder="Ej: Max, Luna, Rocky"
                   {...register("name")}
                 />
                 {errors.name && (
-                  <p className="text-red-400 text-xs mt-1">
+                  <p className="text-red-400 text-xs flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
                     {errors.name.message}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label
                   htmlFor="breed"
-                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                  className="block text-sm font-medium text-gray-300"
                 >
                   Raza <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="breed"
                   type="text"
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                  className={`w-full px-4 py-3 bg-gray-900 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 text-base ${
+                    errors.breed ? "border-red-500" : "border-gray-700"
+                  }`}
                   placeholder="Ej: Labrador, Persa, Mixto"
                   {...register("breed")}
                 />
                 {errors.breed && (
-                  <p className="text-red-400 text-xs mt-1">
+                  <p className="text-red-400 text-xs flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
                     {errors.breed.message}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label
                   htmlFor="birthDate"
-                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                  className="block text-sm font-medium text-gray-300"
                 >
                   Fecha de Nacimiento <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="birthDate"
                   type="date"
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100"
+                  className={`w-full px-4 py-3 bg-gray-900 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 text-base ${
+                    errors.birthDate ? "border-red-500" : "border-gray-700"
+                  }`}
                   {...register("birthDate")}
                 />
                 {errors.birthDate && (
-                  <p className="text-red-400 text-xs mt-1">
+                  <p className="text-red-400 text-xs flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
                     {errors.birthDate.message}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-gray-300 mb-1.5"
+                  className="block text-sm font-medium text-gray-300"
                 >
                   Género <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="gender"
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100"
+                  className={`w-full px-4 py-3 bg-gray-900 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 text-base ${
+                    errors.gender ? "border-red-500" : "border-gray-700"
+                  }`}
                   {...register("gender")}
                 >
                   <option value="">Selecciona un género</option>
@@ -308,118 +347,147 @@ const EditPet = () => {
                   <option value="hembra">Hembra</option>
                 </select>
                 {errors.gender && (
-                  <p className="text-red-400 text-xs mt-1">
+                  <p className="text-red-400 text-xs flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
                     {errors.gender.message}
                   </p>
                 )}
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-300 mb-1.5"
+                className="block text-sm font-medium text-gray-300"
               >
                 Descripción <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
-                rows={3}
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none"
-                placeholder="Descripción general de la mascota"
+                rows={4}
+                className={`w-full px-4 py-3 bg-gray-900 border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none text-base ${
+                  errors.description ? "border-red-500" : "border-gray-700"
+                }`}
+                placeholder="Descripción general de la mascota..."
                 {...register("description")}
               />
               {errors.description && (
-                <p className="text-red-400 text-xs mt-1">
+                <p className="text-red-400 text-xs flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
                   {errors.description.message}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center gap-3 pt-2">
               <input
                 id="isCastrated"
                 type="checkbox"
-                className="w-5 h-5 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-orange-500 text-orange-500"
+                className="w-5 h-5 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-orange-500 text-orange-500 cursor-pointer"
                 {...register("isCastrated")}
               />
               <label
                 htmlFor="isCastrated"
-                className="ml-3 text-sm font-medium text-gray-300"
+                className="text-sm font-medium text-gray-300 cursor-pointer"
               >
                 ¿Está castrado/esterilizado?
               </label>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-100 border-b border-gray-700 pb-2">
-              Información Adicional (Opcional)
-            </h2>
-
-            <div>
+        {/* Additional Information Card */}
+        <Card className="border-gray-700 bg-gray-800/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl font-semibold text-gray-100">
+              Información Adicional
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm text-gray-400">
+              Estos campos son opcionales pero ayudan a tener un registro más completo
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-5">
+            <div className="space-y-2">
               <label
                 htmlFor="temperament"
-                className="block text-sm font-medium text-gray-300 mb-1.5"
+                className="block text-sm font-medium text-gray-300"
               >
                 Temperamento
               </label>
               <input
                 id="temperament"
                 type="text"
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 text-base"
                 placeholder="Ej: Juguetón, tranquilo, enérgico"
                 {...register("temperament")}
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label
                 htmlFor="medicalInformation"
-                className="block text-sm font-medium text-gray-300 mb-1.5"
+                className="block text-sm font-medium text-gray-300"
               >
                 Información Médica
               </label>
               <textarea
                 id="medicalInformation"
-                rows={3}
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none"
+                rows={4}
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500 resize-none text-base"
                 placeholder="Alergias, vacunas, condiciones especiales, etc."
                 {...register("medicalInformation")}
               />
             </div>
 
-            <ImageUpload
-              onImageUploaded={handleImageUploaded}
-              petName={currentPet?.name || "pet"}
-              maxImages={1}
-              currentImages={photoUrls}
-              onUploadingChange={setUploadingImage}
-            />
-          </div>
+            {/* Photo Upload Section */}
+            <div className="space-y-3">
+              <ImageUpload
+                onImageUploaded={handleImageUploaded}
+                petName={currentPet?.name || "pet"}
+                maxImages={1}
+                currentImages={photoUrls}
+                onUploadingChange={setUploadingImage}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="flex gap-4 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard")}
-              className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold border-2 border-gray-700 text-gray-300 hover:bg-gray-700 hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-gray-600 transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || uploadingImage}
-              className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
-            >
-              {uploadingImage
-                ? "Subiendo imagen..."
-                : loading
-                ? "Actualizando..."
-                : "Actualizar Mascota"}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Form Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-700">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={() => navigate("/dashboard")}
+            className="w-full sm:flex-1 border-gray-600 text-gray-300 hover:bg-gray-700/50 hover:border-gray-500 hover:text-gray-100 font-medium"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={loading || uploadingImage}
+            className="w-full sm:flex-1 bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:via-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-200 disabled:shadow-md disabled:hover:shadow-md"
+          >
+            {uploadingImage ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <span>Subiendo imagen...</span>
+              </>
+            ) : loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <span>Actualizando...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5 mr-2" />
+                <span>Actualizar Mascota</span>
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

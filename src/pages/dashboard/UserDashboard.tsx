@@ -1,7 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-
-import { DogIcon } from "lucide-react";
+import {
+  DogIcon,
+  Plus,
+  BarChart3,
+  Bell,
+  Edit,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useAppSelector } from "../../hooks/redux";
 import { selectUser } from "../../features/auth/authSlice";
 import { useAppDispatch } from "../../hooks/redux";
@@ -11,6 +21,10 @@ import {
   toggleLostStatus,
 } from "../../features/pets/petsSlice";
 import ConfirmModal from "../../components/ConfirmModal";
+import RemindersModal, { Reminder } from "../../components/RemindersModal";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
 
 const UserDashboard = () => {
   const dispatch = useAppDispatch();
@@ -39,10 +53,16 @@ const UserDashboard = () => {
     petName: "",
     currentStatus: false,
   });
+  const [remindersModalOpen, setRemindersModalOpen] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchPets());
   }, [dispatch]);
+
+  // TODO: Implementar sistema real de recordatorios
+  // Por ahora, el array de reminders está vacío hasta que se implemente el sistema real
 
   const handleDeleteClick = (petId: string, petName: string) => {
     setDeleteModal({
@@ -57,11 +77,14 @@ const UserDashboard = () => {
 
     try {
       setDeletingPetId(deleteModal.petId);
+      setErrorMessage(null);
       await dispatch(deletePet(deleteModal.petId)).unwrap();
       setDeleteModal({ isOpen: false, petId: null, petName: "" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al eliminar mascota:", error);
-      alert("Error al eliminar la mascota. Por favor, intenta de nuevo.");
+      const errorMsg = error?.message || "Error al eliminar la mascota. Por favor, intenta de nuevo.";
+      setErrorMessage(errorMsg);
+      setDeleteModal({ isOpen: false, petId: null, petName: "" });
     } finally {
       setDeletingPetId(null);
     }
@@ -83,11 +106,12 @@ const UserDashboard = () => {
   const handleToggleLostConfirm = async () => {
     if (!toggleLostModal.petId) return;
 
-    const { petId, currentStatus, petName } = toggleLostModal;
+    const { petId, currentStatus } = toggleLostModal;
     const action = currentStatus ? "desmarcar" : "marcar";
 
     try {
       setTogglingLostId(petId);
+      setErrorMessage(null);
       await dispatch(
         toggleLostStatus({ id: petId, isLost: !currentStatus })
       ).unwrap();
@@ -97,11 +121,16 @@ const UserDashboard = () => {
         petName: "",
         currentStatus: false,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al actualizar estado:", error);
-      alert(
-        `Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`
-      );
+      const errorMsg = error?.message || `Error al ${action} la mascota como perdida. Por favor, intenta de nuevo.`;
+      setErrorMessage(errorMsg);
+      setToggleLostModal({
+        isOpen: false,
+        petId: null,
+        petName: "",
+        currentStatus: false,
+      });
     } finally {
       setTogglingLostId(null);
     }
@@ -111,225 +140,223 @@ const UserDashboard = () => {
     navigate(`/dashboard/edit/${petId}`);
   };
 
+  const handleCompleteReminder = (reminderId: string) => {
+    setReminders((prev) =>
+      prev.map((reminder) =>
+        reminder.id === reminderId
+          ? { ...reminder, completed: !reminder.completed }
+          : reminder
+      )
+    );
+  };
+
+  const pendingRemindersCount = reminders.filter((r) => !r.completed).length;
+
+  const totalPets = Array.isArray(pets) ? pets.length : 0;
+  const petsThisMonth = Array.isArray(pets)
+    ? pets.filter((pet) => {
+        const petDate = new Date(pet.createdAt);  
+        const now = new Date();
+        return (
+          petDate.getMonth() === now.getMonth() &&
+          petDate.getFullYear() === now.getFullYear()
+        );
+      }).length
+    : 0;
+
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-100 mb-2">
-          Dashboard
-        </h1>
-        <p className="text-sm md:text-base text-gray-400">
-          Bienvenido,{" "}
-          <span className="text-orange-500 font-semibold">{user?.email}</span>
-        </p>
+    <div className="w-full max-w-7xl mx-auto px-4 pb-8">
+      {/* Error Message */}
+      {errorMessage && (
+        <Card className="border-red-700/50 bg-red-900/20 mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-300">
+                    Error
+                  </p>
+                  <p className="text-xs text-red-200 mt-1">{errorMessage}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setErrorMessage(null)}
+                className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Header - Mobile First */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-100 mb-1">
+            Dashboard
+          </h1>
+          <p className="text-sm text-gray-400">
+            Bienvenido,{" "}
+            <span className="text-orange-500 font-medium">{user?.email}</span>
+          </p>
+        </div>
+        {/* Reminders Button - Only visible on mobile */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setRemindersModalOpen(true)}
+          className="relative h-11 w-11 border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 hover:border-purple-500 shrink-0 lg:hidden"
+          title="Ver recordatorios"
+        >
+          <Bell className="w-5 h-5" />
+          {pendingRemindersCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              {pendingRemindersCount > 9 ? "9+" : pendingRemindersCount}
+            </span>
+          )}
+        </Button>
       </div>
 
-      {/* Flex container to reorder on mobile */}
-      <div className="flex flex-col">
-        {/* Quick Actions - Horizontal scroll on mobile, grid on desktop */}
-        <div className="mb-6 md:mb-8 order-1">
-          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-            {/* Add Pet Card */}
-            <div className="flex-shrink-0 w-[280px] md:w-auto bg-gray-800 rounded-2xl p-5 md:p-6 border border-gray-700 shadow-md">
-              <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-lg md:text-xl font-semibold text-gray-100">
-                  Agregar
-                </h3>
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 md:w-6 md:h-6 text-orange-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                </div>
+      {/* Quick Actions - Vertical Stack on Mobile */}
+      <div className="space-y-4 mb-6 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
+        {/* Add Pet Card */}
+        <Card className="border-gray-700 bg-gray-800/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold text-gray-100">
+                Agregar Mascota
+              </CardTitle>
+              <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                <Plus className="w-5 h-5 text-orange-500" />
               </div>
-              <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4">
-                Registra una nueva mascota
-              </p>
-              <Link
-                to="/dashboard/create"
-                className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-orange-500 transition-all shadow-md hover:shadow-lg"
-              >
+            </div>
+            <CardDescription className="text-xs text-gray-400 mt-1">
+              Registra una nueva mascota en el sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              asChild
+              className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white h-11"
+            >
+              <Link to="/dashboard/create">
+                <Plus className="w-4 h-4" />
                 Nueva Mascota
               </Link>
-            </div>
+            </Button>
+          </CardContent>
+        </Card>
 
-            {/* Stats Card */}
-            <div className="flex-shrink-0 w-[280px] md:w-auto bg-gray-800 rounded-2xl p-5 md:p-6 border border-gray-700 shadow-md">
-              <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-lg md:text-xl font-semibold text-gray-100">
-                  Estadísticas
-                </h3>
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 md:w-6 md:h-6 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
+        {/* Stats Card */}
+        <Card className="border-gray-700 bg-gray-800/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold text-gray-100">
+                Estadísticas
+              </CardTitle>
+              <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-blue-500" />
               </div>
-              <p className="text-gray-400 text-xs md:text-sm mb-1 md:mb-2">
-                Total de mascotas:{" "}
-                <span className="text-gray-100 font-semibold">
-                  {Array.isArray(pets) ? pets.length : 0}
-                </span>
-              </p>
-              <p className="text-gray-400 text-xs md:text-sm">
-                Registradas este mes:{" "}
-                <span className="text-gray-100 font-semibold">
-                  {Array.isArray(pets)
-                    ? pets.filter((pet) => {
-                        const petDate = new Date(pet.createdAt);
-                        const now = new Date();
-                        return (
-                          petDate.getMonth() === now.getMonth() &&
-                          petDate.getFullYear() === now.getFullYear()
-                        );
-                      }).length
-                    : 0}
-                </span>
-              </p>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">Total mascotas</span>
+              <span className="text-lg font-bold text-gray-100">{totalPets}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">Este mes</span>
+              <span className="text-lg font-bold text-gray-100">{petsThisMonth}</span>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Reminders Card - Hidden on mobile */}
-            <div className="hidden lg:block bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-100">
-                  Recordatorios
-                </h3>
-                <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6 text-purple-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+        {/* Reminders Card - Hidden on mobile, visible on desktop */}
+        <Card 
+          className="hidden lg:block border-gray-700 bg-gray-800/50 cursor-pointer hover:border-purple-500/50 transition-colors"
+          onClick={() => setRemindersModalOpen(true)}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold text-gray-100">
+                Recordatorios
+              </CardTitle>
+              <div className="relative">
+                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-purple-500" />
                 </div>
+                {pendingRemindersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {pendingRemindersCount > 9 ? "9+" : pendingRemindersCount}
+                  </span>
+                )}
               </div>
-              <p className="text-gray-400 text-sm">
-                No hay recordatorios pendientes
-              </p>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent>
+            {pendingRemindersCount > 0 ? (
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-gray-100">
+                  {pendingRemindersCount} pendiente{pendingRemindersCount !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-gray-400">Haz clic para ver detalles</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No hay recordatorios pendientes</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* My Pets Section */}
-        <div className="bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-700 shadow-md mb-6 md:mb-8 order-2">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-100 mb-4">
+      {/* My Pets Section */}
+      <Card className="border-gray-700 bg-gray-800/50">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-gray-100">
             Mis Mascotas
-          </h2>
-
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {loading ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <svg
-                  className="w-8 h-8 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </div>
-              <p className="text-gray-400">Cargando mascotas...</p>
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader2 className="w-12 h-12 text-gray-500 animate-spin mb-4" />
+              <p className="text-sm text-gray-400">Cargando mascotas...</p>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-red-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-500" />
               </div>
-              <p className="text-red-400">{error}</p>
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           ) : !Array.isArray(pets) || pets.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                  />
-                </svg>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                <DogIcon className="w-8 h-8 text-gray-500" />
               </div>
-              <p className="text-gray-400 mb-4">
+              <p className="text-sm text-gray-400 mb-4 text-center">
                 Aún no has registrado ninguna mascota
               </p>
-              <Link
-                to="/dashboard/create"
-                className="inline-flex items-center text-orange-500 hover:text-orange-400 font-semibold transition-colors"
-              >
-                Registrar primera mascota
-                <svg
-                  className="w-5 h-5 ml-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
-              </Link>
+              <Button asChild variant="outline" className="border-orange-500/50 text-orange-500 hover:bg-orange-500/10">
+                <Link to="/dashboard/create">
+                  <Plus className="w-4 h-4" />
+                  Registrar primera mascota
+                </Link>
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.isArray(pets) && pets.slice(0, 6).map((pet) => (
-                <div
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pets.slice(0, 6).map((pet) => (
+                <Card
                   key={pet._id}
-                  className="bg-gray-700/50 rounded-xl p-4 border border-gray-600 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10"
+                  className="border-gray-700/50 bg-gray-800/80 backdrop-blur-sm hover:border-orange-500/70 transition-all duration-200 overflow-hidden shadow-lg hover:shadow-xl hover:shadow-orange-500/10"
                 >
                   <Link to={pet.tagId ? `/pet/${pet.tagId}` : `/pet/chapitas`}>
                     {pet.photos && pet.photos.length > 0 ? (
-                      <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 overflow-hidden">
+                      <div className="w-full aspect-video bg-gray-600 overflow-hidden">
                         <img
                           src={pet.photos[0]}
                           alt={pet.name}
@@ -337,155 +364,117 @@ const UserDashboard = () => {
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-32 bg-gray-600 rounded-lg mb-3 flex items-center justify-center">
-                        <DogIcon className="w-10 h-10 text-gray-500" />
+                      <div className="w-full aspect-video bg-gray-600 flex items-center justify-center">
+                        <DogIcon className="w-12 h-12 text-gray-500" />
                       </div>
                     )}
                   </Link>
-                  <h3 className="text-lg font-semibold text-gray-100 mb-1">
-                    {pet.name}
-                    {pet.isLost && (
-                      <span className="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                        PERDIDA
-                      </span>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-semibold text-gray-100 line-clamp-1">
+                        {pet.name}
+                      </CardTitle>
+                      <div className="flex flex-wrap gap-1 shrink-0">
+                        {pet.isLost && (
+                          <Badge variant="destructive" className="text-xs px-2 py-0">
+                            PERDIDA
+                          </Badge>
+                        )}
+                        {!pet.tagId && (
+                          <Badge className="bg-amber-500 text-white border-0 text-xs px-2 py-0">
+                            SIN CHAPITA
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <CardDescription className="text-sm text-gray-400">
+                      {pet.breed}
+                    </CardDescription>
+                    {pet?.gender && (
+                      <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                        <span className="capitalize">{pet.gender}</span>
+                        <span>{new Date(pet.birthDate).toLocaleDateString()}</span>
+                      </div>
                     )}
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
                     {!pet.tagId && (
-                      <span className="ml-2 text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full">
-                        SIN CHAPITA
-                      </span>
+                      <div className="bg-gradient-to-r from-amber-900/40 to-orange-900/40 border border-amber-600/50 rounded-lg md:rounded-xl p-2.5 md:p-3">
+                        <p className="text-xs md:text-sm text-amber-300 text-center font-medium">
+                          🏷️ Haz clic en la imagen para vincular una chapita
+                        </p>
+                      </div>
                     )}
-                  </h3>
-                  <p className="text-sm text-gray-400 mb-2">{pet.breed}</p>
-                  {pet?.gender && (
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                      <span className="capitalize">{pet?.gender}</span>
-                      <span>
-                        {new Date(pet.birthDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
 
-                  {!pet.tagId && (
-                    <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-2 mb-2">
-                      <p className="text-xs text-amber-300 text-center">
-                        🏷️ Haz clic en la imagen para vincular una chapita
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-2 mt-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(pet._id)}
-                        className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
-                        title="Editar mascota"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                    {/* Action Buttons - Improved Visibility */}
+                    <div className="space-y-2.5 md:space-y-3 pt-2 border-t border-gray-700/50">
+                      {/* Edit and Delete Buttons */}
+                      <div className="grid grid-cols-2 gap-2 md:gap-2.5">
+                        <Button
+                          onClick={() => handleEdit(pet._id)}
+                          className="h-10 md:h-11 bg-gray-700 hover:bg-gray-600 text-gray-100 border border-gray-600 hover:border-gray-500 text-xs md:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(pet._id, pet.name)}
-                        disabled={deletingPetId === pet._id}
-                        className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Eliminar mascota"
+                          <Edit className="w-4 h-4 md:w-5 md:h-5 mr-1.5" />
+                          <span>Editar</span>
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteClick(pet._id, pet.name)}
+                          disabled={deletingPetId === pet._id}
+                          className="h-10 md:h-11 bg-red-600 hover:bg-red-700 text-white border-0 text-xs md:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                          {deletingPetId === pet._id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-1.5 animate-spin" />
+                              <span>Eliminando</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-4 h-4 md:w-5 md:h-5 mr-1.5" />
+                              <span>Eliminar</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Report Lost/Found Button */}
+                      <Button
+                        onClick={() =>
+                          handleToggleLostClick(pet._id, pet.isLost || false, pet.name)
+                        }
+                        disabled={togglingLostId === pet._id}
+                        className={`w-full h-11 md:h-12 text-sm md:text-base font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                          pet.isLost
+                            ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0 shadow-lg hover:shadow-green-500/25"
+                            : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border-0 shadow-lg hover:shadow-orange-500/25"
+                        }`}
                       >
-                        {deletingPetId === pet._id ? (
-                          <>Eliminando...</>
+                        {togglingLostId === pet._id ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            <span>Actualizando...</span>
+                          </>
+                        ) : pet.isLost ? (
+                          <>
+                            <CheckCircle2 className="w-5 h-5 mr-2" />
+                            <span>Marcar como Encontrada</span>
+                          </>
                         ) : (
                           <>
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            Eliminar
+                            <AlertTriangle className="w-5 h-5 mr-2" />
+                            <span>Reportar como Perdida</span>
                           </>
                         )}
-                      </button>
+                      </Button>
                     </div>
-                    <button
-                      onClick={() =>
-                        handleToggleLostClick(pet._id, pet.isLost || false, pet.name)
-                      }
-                      disabled={togglingLostId === pet._id}
-                      className={`w-full py-2 px-3 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed ${
-                        pet.isLost
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-amber-600 hover:bg-amber-700"
-                      }`}
-                      title={
-                        pet.isLost
-                          ? "Marcar como encontrada"
-                          : "Marcar como perdida"
-                      }
-                    >
-                      {togglingLostId === pet._id ? (
-                        <>Actualizando...</>
-                      ) : pet.isLost ? (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          Encontrada
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                            />
-                          </svg>
-                          Reportar Perdida
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Modal de Confirmación para Eliminar */}
+      {/* Modals */}
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() =>
@@ -499,7 +488,6 @@ const UserDashboard = () => {
         confirmButtonColor="red"
       />
 
-      {/* Modal de Confirmación para Toggle Lost Status */}
       <ConfirmModal
         isOpen={toggleLostModal.isOpen}
         onClose={() =>
@@ -524,6 +512,13 @@ const UserDashboard = () => {
         confirmText={toggleLostModal.currentStatus ? "Marcar Encontrada" : "Marcar Perdida"}
         cancelText="Cancelar"
         confirmButtonColor={toggleLostModal.currentStatus ? "green" : "orange"}
+      />
+
+      <RemindersModal
+        isOpen={remindersModalOpen}
+        onClose={() => setRemindersModalOpen(false)}
+        reminders={reminders}
+        onCompleteReminder={handleCompleteReminder}
       />
     </div>
   );

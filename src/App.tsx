@@ -1,7 +1,111 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppSelector, useAppDispatch } from "./hooks/redux";
 import { fetchLostPets } from "./features/pets/petsSlice";
+import { Button } from "./components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
+import { Badge } from "./components/ui/badge";
+import { Star, AlertTriangle, QrCode, Camera, Heart, Search, CheckCircle2 } from "lucide-react";
+
+// Componente para animaciones de entrada con Intersection Observer
+const AnimatedSection = ({ 
+  children, 
+  delay = 0,
+  className = "",
+  rootMargin = '0px 0px -50px 0px'
+}: { 
+  children: React.ReactNode; 
+  delay?: number;
+  className?: string;
+  rootMargin?: string;
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsVisible(true), delay);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1, rootMargin }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, [delay, rootMargin]);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${
+        isVisible
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-8'
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Componente para animar texto palabra por palabra
+const AnimatedText = ({ 
+  text, 
+  delay = 0,
+  className = ""
+}: { 
+  text: string; 
+  delay?: number;
+  className?: string;
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsVisible(true), delay);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -30px 0px' }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, [delay]);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${
+        isVisible
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4'
+      } ${className}`}
+    >
+      {text}
+    </div>
+  );
+};
 
 function App() {
   const dispatch = useAppDispatch();
@@ -9,276 +113,397 @@ function App() {
   const { lostPets } = useAppSelector((state) => state.pets);
 
   useEffect(() => {
-    // Cargar mascotas perdidas para mostrar estadísticas
     dispatch(fetchLostPets());
   }, [dispatch]);
 
   return (
-    <div className="space-y-20">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 py-12">
-        <div className="inline-block">
-          <span className="bg-orange-500/10 text-orange-400 px-4 py-2 rounded-full text-sm font-medium border border-orange-500/20">
-            Sistema de Identificación Inteligente
-          </span>
-        </div>
+    <div className="relative overflow-hidden">
+      {/* Fondo decorativo sutil */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-black" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl animate-pulse animate-float" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-pulse delay-1000 animate-float" style={{ animationDelay: '1.5s' }} />
+      </div>
 
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
-          Reúnete con tu mascota
-          <br />
-          <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-            más rápido que nunca
-          </span>
-        </h1>
-
-        <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-          E-Patitas es un sistema integral diseñado para la identificación y
-          localización de mascotas extraviadas mediante placas inteligentes con
-          código QR.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
-          {user ? (
-            <Link
-              to="/dashboard"
-              className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Ir al Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link
-                to="/register"
-                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                Comenzar Ahora
-              </Link>
-              <Link
-                to="/login"
-                className="border-2 border-gray-700 text-gray-300 px-8 py-4 rounded-lg text-lg font-semibold hover:border-orange-500 hover:text-orange-400 transition-all duration-200"
-              >
-                Iniciar Sesión
-              </Link>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Problem Statement */}
-      <section className="max-w-5xl mx-auto">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 md:p-12 rounded-2xl shadow-2xl border border-gray-700">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="bg-orange-500/10 p-3 rounded-lg">
-              <svg
-                className="w-8 h-8 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Un problema que afecta a millones
-              </h2>
-              <p className="text-gray-300 text-lg leading-relaxed">
-                <span className="text-orange-400 font-semibold">
-                  Uno de cada tres animales domésticos se pierde al menos una
-                  vez en su vida.
-                </span>{" "}
-                Los métodos tradicionales como carteles o publicaciones en redes
-                sociales resultan lentos e ineficaces, causando altos niveles de
-                estrés y angustia en los dueños.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-bold text-white text-center mb-12">
-          ¿Cómo funciona E-Patitas?
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Feature 1 */}
-          <div className="bg-gray-900 p-8 rounded-xl border border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:transform hover:scale-105">
-            <div className="bg-orange-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-6">
-              <svg
-                className="w-8 h-8 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">
-              Placa Inteligente QR
-            </h3>
-            <p className="text-gray-400 leading-relaxed">
-              Cada mascota recibe una placa con código QR único que cualquier
-              persona puede escanear para acceder a la información de contacto.
-            </p>
-          </div>
-
-          {/* Feature 2 */}
-          <div className="bg-gray-900 p-8 rounded-xl border border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:transform hover:scale-105">
-            <div className="bg-orange-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-6">
-              <svg
-                className="w-8 h-8 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">
-              Conexión Instantánea
-            </h3>
-            <p className="text-gray-400 leading-relaxed">
-              Al escanear el QR, quien encuentre la mascota accede
-              inmediatamente a una plataforma web con los datos del dueño.
-            </p>
-          </div>
-
-          {/* Feature 3 */}
-          <div className="bg-gray-900 p-8 rounded-xl border border-gray-800 hover:border-orange-500/50 transition-all duration-300 hover:transform hover:scale-105">
-            <div className="bg-orange-500/10 w-14 h-14 rounded-lg flex items-center justify-center mb-6">
-              <svg
-                className="w-8 h-8 text-orange-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">
-              Reencuentro Rápido
-            </h3>
-            <p className="text-gray-400 leading-relaxed">
-              Acelera significativamente el tiempo de búsqueda y aumenta las
-              posibilidades de que las mascotas se reúnan con sus dueños.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Impact Section */}
-      <section className="max-w-5xl mx-auto">
-        <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 p-8 md:p-12 rounded-2xl border border-orange-500/20">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Impacto Social Positivo
-            </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              E-Patitas no solo ofrece tecnología moderna y accesible, sino que
-              brinda{" "}
-              <span className="text-orange-400 font-semibold">
-                tranquilidad y seguridad
-              </span>{" "}
-              para un miembro de tu familia. Porque sabemos que tu mascota es
-              más que un animal, es parte de tu vida.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Estadísticas desde el Backend */}
-      <section className="max-w-5xl mx-auto">
-        <div className="bg-gray-800 rounded-2xl p-8 md:p-12 border border-gray-700">
-          <div className="text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Estadísticas en Tiempo Real
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
-                <div className="text-4xl font-bold text-orange-400 mb-2">
-                  {lostPets.length}
-                </div>
-                <div className="text-gray-300 text-lg">
-                  Mascotas Perdidas Actualmente
-                </div>
-                <Link
-                  to="/lost-pets"
-                  className="mt-4 inline-block text-orange-400 hover:text-orange-300 text-sm font-semibold transition-colors"
+      <div className="space-y-16 md:space-y-24 pb-16">
+        {/* Hero Section - Optimizado Mobile */}
+        <section className="pt-8 md:pt-16 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Badge */}
+            <AnimatedSection delay={0}>
+              <div className="inline-block mb-6 md:mb-8">
+                <Badge 
+                  variant="outline" 
+                  className="bg-orange-500/10 text-orange-400 border-orange-500/20 backdrop-blur-sm px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm"
                 >
-                  Ver todas →
-                </Link>
+                  <Star className="w-3 h-3 md:w-4 md:h-4 mx-2" />
+                  Sistema de Identificación Inteligente
+                </Badge>
               </div>
-              <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700">
-                <div className="text-4xl font-bold text-green-400 mb-2">
-                  {lostPets.length > 0 ? "Activo" : "Sin reportes"}
+            </AnimatedSection>
+
+            {/* Título principal - Mobile optimized */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-4 mb-6 md:mb-8">
+              <AnimatedText text="Tu mascota perdida," delay={100} className="block mb-2" />
+              <AnimatedText 
+                text="encontrada en minutos" 
+                delay={300} 
+                className="bg-gradient-to-r from-orange-400 via-amber-500 to-orange-500 bg-clip-text text-transparent inline-block" 
+              />
+            </h1>
+
+            {/* Subtítulo con mejor legibilidad */}
+            <AnimatedSection delay={500}>
+              <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4 mb-6 md:mb-8">
+                Una chapita inteligente con <span className="text-orange-400 font-semibold">tecnología QR y NFC</span> que permite 
+                que quien encuentre a tu mascota te contacte{" "}
+                <span className="text-white font-semibold">instantáneamente</span>. 
+                Sin apps, sin esperas, sin angustia.
+              </p>
+            </AnimatedSection>
+
+            {/* CTAs optimizados */}
+            <AnimatedSection delay={700}>
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center pt-4 md:pt-6 px-4">
+                {user ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    <Link to="/dashboard">Ir al Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+                    >
+                      <Link to="/register">Proteger mi Mascota</Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto border-2 border-gray-800 text-gray-300 hover:border-orange-500 hover:text-orange-400 hover:bg-orange-500/5 transition-all duration-300 hover:scale-105 active:scale-95"
+                    >
+                      <Link to="/login">Iniciar Sesión</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
+
+        {/* Problema - Enfoque en dolor del cliente */}
+        <section className="px-4">
+          <AnimatedSection delay={300} rootMargin="0px 0px -100px 0px">
+            <div className="max-w-4xl mx-auto">
+            <Card className="relative bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 backdrop-blur-sm border-gray-800/50 overflow-hidden group hover:border-orange-500/30 transition-all duration-500 shadow-2xl hover:shadow-orange-500/20">
+              {/* Efecto de brillo en hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              
+              <CardContent className="relative z-10 p-6 md:p-10">
+                <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-5">
+                  <div className="flex-shrink-0 bg-orange-500/10 p-3 rounded-xl border border-orange-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                    <AlertTriangle className="w-6 h-6 md:w-7 md:h-7 text-orange-400 animate-pulse" />
+                  </div>
+                  <div className="flex-1 space-y-4">
+                    <CardTitle className="text-2xl md:text-3xl text-white">
+                      ¿Tu peor pesadilla?
+                    </CardTitle>
+                    <div className="space-y-3 text-gray-300 text-sm md:text-base leading-relaxed">
+                      <p>
+                        <span className="text-orange-400 font-semibold text-base md:text-lg">
+                          1 de cada 3 mascotas se pierde
+                        </span>{" "}
+                        al menos una vez en su vida.
+                      </p>
+                      <p>
+                        Carteles en postes. Publicaciones en Facebook. Llamadas a veterinarias. 
+                        <span className="text-white font-medium"> Horas de angustia sin saber dónde está</span>.
+                      </p>
+                      <p className="text-orange-300 font-medium">
+                        Cada minuto cuenta. E-Patitas te devuelve el control.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-gray-300 text-lg">
-                  Sistema de Búsqueda
-                </div>
-                <p className="mt-4 text-gray-400 text-sm">
-                  {lostPets.length > 0
-                    ? "Ayuda a reunir estas mascotas con sus familias"
-                    : "Todas las mascotas están seguras en casa"}
+              </CardContent>
+            </Card>
+            </div>
+          </AnimatedSection>
+        </section>
+
+        {/* Cómo Funciona - Cards mejoradas */}
+        <section className="px-4">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection delay={0}>
+              <div className="text-center mb-10 md:mb-14 space-y-3">
+                <h2 className="text-3xl md:text-4xl font-bold text-white">
+                  3 pasos para la tranquilidad
+                </h2>
+                <p className="text-gray-400 text-sm md:text-base max-w-2xl mx-auto">
+                  Tecnología simple que funciona cuando más la necesitas
                 </p>
               </div>
-            </div>
-            {lostPets.length > 0 && (
-              <div className="mt-6">
-                <Link
-                  to="/lost-pets"
-                  className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  Ver Mascotas Perdidas
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </AnimatedSection>
 
-      {/* CTA Final */}
-      <section className="text-center py-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-          ¿Listo para proteger a tu mascota?
-        </h2>
-        {user ? (
-          <Link
-            to="/dashboard"
-            className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-white px-10 py-5 rounded-lg text-xl font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            Gestionar mis Mascotas
-          </Link>
-        ) : (
-          <Link
-            to="/register"
-            className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-white px-10 py-5 rounded-lg text-xl font-semibold hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            Crear mi Cuenta Gratis
-          </Link>
-        )}
-      </section>
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+              {/* Step 1 */}
+              <AnimatedSection delay={100}>
+                <Card className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-gray-800/50 hover:border-orange-500/50 transition-all duration-500 hover:transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10">
+                {/* Número de paso */}
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg z-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                  1
+                </div>
+                
+                <CardHeader>
+                  <div className="bg-orange-500/10 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                    <QrCode className="w-7 h-7 md:w-8 md:h-8 text-orange-400 group-hover:animate-pulse" />
+                  </div>
+                  <CardTitle className="text-lg md:text-xl text-white">
+                    Placa QR Única
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-gray-400 text-sm md:text-base leading-relaxed">
+                    Tu mascota lleva una placa resistente con su código QR exclusivo. 
+                    Impermeable, duradera y diseñada para durar años.
+                  </CardDescription>
+                </CardContent>
+                </Card>
+              </AnimatedSection>
+
+              {/* Step 2 */}
+              <AnimatedSection delay={200}>
+                <Card className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-gray-800/50 hover:border-orange-500/50 transition-all duration-500 hover:transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10">
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg z-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                  2
+                </div>
+                
+                <CardHeader>
+                  <div className="bg-orange-500/10 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                    <Camera className="w-7 h-7 md:w-8 md:h-8 text-orange-400 group-hover:animate-pulse" />
+                  </div>
+                  <CardTitle className="text-lg md:text-xl text-white">
+                    Escaneo Instantáneo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-gray-400 text-sm md:text-base leading-relaxed">
+                    Cualquier persona con smartphone escanea el código y accede inmediatamente 
+                    a tu perfil de contacto. Sin apps, sin complicaciones.
+                  </CardDescription>
+                </CardContent>
+                </Card>
+              </AnimatedSection>
+
+              {/* Step 3 */}
+              <AnimatedSection delay={300}>
+                <Card className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-gray-800/50 hover:border-orange-500/50 transition-all duration-500 hover:transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-orange-500/10">
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg z-10 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                  3
+                </div>
+                
+                <CardHeader>
+                  <div className="bg-orange-500/10 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                    <Heart className="w-7 h-7 md:w-8 md:h-8 text-orange-400 group-hover:animate-pulse fill-orange-400/20" />
+                  </div>
+                  <CardTitle className="text-lg md:text-xl text-white">
+                    Reencuentro Inmediato
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-gray-400 text-sm md:text-base leading-relaxed">
+                    Recibes una notificación con la ubicación del hallazgo. 
+                    Coordinas el encuentro en minutos, no en días de búsqueda desesperada.
+                  </CardDescription>
+                </CardContent>
+                </Card>
+              </AnimatedSection>
+            </div>
+          </div>
+        </section>
+
+        {/* Estadísticas en Vivo */}
+        <section className="px-4">
+          <AnimatedSection delay={0}>
+            <div className="max-w-4xl mx-auto">
+            <Card className="relative bg-gradient-to-br from-gray-900/80 via-gray-800/80 to-gray-900/80 backdrop-blur-sm border-gray-800/50 overflow-hidden">
+              {/* Efecto de fondo animado */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(251,146,60,0.1),transparent_50%)] animate-pulse" />
+              
+              <CardContent className="relative z-10 p-6 md:p-10 space-y-6 md:space-y-8">
+                <div className="text-center">
+                  <CardTitle className="text-2xl md:text-3xl text-white mb-2">
+                    Comunidad Activa
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-sm md:text-base">
+                    Mascotas siendo reunidas con sus familias en tiempo real
+                  </CardDescription>
+                </div>
+                
+                <div className="grid sm:grid-cols-2 gap-4 md:gap-6">
+                  <Card className="relative group bg-gray-900/60 backdrop-blur-sm border-gray-800/50 hover:border-orange-500/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 group-hover:scale-150 transition-all duration-500" />
+                    <CardContent className="relative z-10 p-5 md:p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent transition-all duration-300 group-hover:scale-110 inline-block">
+                          {lostPets.length}
+                        </span>
+                        <Search className="w-6 h-6 md:w-7 md:h-7 text-orange-400/50 group-hover:text-orange-400 group-hover:scale-110 transition-all duration-300" />
+                      </div>
+                      <div className="text-gray-300 text-sm md:text-base font-medium mb-1">
+                        Búsquedas Activas
+                      </div>
+                      <div className="text-xs md:text-sm text-gray-500">
+                        Familias esperando noticias ahora
+                      </div>
+                      {lostPets.length > 0 && (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          className="mt-4 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 p-0 h-auto"
+                        >
+                          <Link to="/lost-pets" className="text-xs md:text-sm font-semibold">
+                            Ayudar a encontrarlas →
+                          </Link>
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="relative group bg-gray-900/60 backdrop-blur-sm border-gray-800/50 hover:border-orange-500/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/10 group-hover:scale-150 transition-all duration-500" />
+                    <CardContent className="relative z-10 p-5 md:p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-pulse group-hover:scale-150 transition-transform" />
+                          <span className="text-3xl md:text-4xl font-bold text-orange-400 transition-all duration-300 group-hover:scale-110 inline-block">
+                            {lostPets.length > 0 ? "ON" : "OK"}
+                          </span>
+                        </div>
+                        <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7 text-orange-400/50 group-hover:text-orange-400 group-hover:scale-110 transition-all duration-300" />
+                      </div>
+                      <div className="text-gray-300 text-sm md:text-base font-medium mb-1">
+                        Sistema Operativo
+                      </div>
+                      <div className="text-xs md:text-sm text-gray-500">
+                        {lostPets.length > 0
+                          ? "Red de ayuda conectada 24/7"
+                          : "Todas las mascotas seguras"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {lostPets.length > 0 && (
+                  <div className="text-center pt-2">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border-orange-500/30 text-orange-400"
+                    >
+                      <Link to="/lost-pets" className="inline-flex items-center gap-2">
+                        <Search className="w-4 h-4 md:w-5 md:h-5" />
+                        Ver todas las búsquedas activas
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            </div>
+          </AnimatedSection>
+        </section>
+
+        {/* Beneficio Emocional */}
+        <section className="px-4">
+          <AnimatedSection delay={0}>
+            <div className="max-w-4xl mx-auto">
+            <Card className="relative bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-orange-500/10 backdrop-blur-sm border-orange-500/20 overflow-hidden group hover:border-orange-500/40 transition-all duration-500">
+              {/* Efecto de brillo */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-orange-400/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-amber-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
+              
+              <CardContent className="relative z-10 text-center p-6 md:p-10 space-y-4 md:space-y-5">
+                <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-orange-500/10 rounded-2xl border border-orange-500/30 mb-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                  <Heart className="w-7 h-7 md:w-8 md:h-8 text-orange-400 animate-pulse fill-orange-400/20" />
+                </div>
+                
+                <CardTitle className="text-2xl md:text-3xl lg:text-4xl text-white">
+                  No es solo tecnología
+                </CardTitle>
+                <CardDescription className="text-base md:text-lg lg:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
+                  Es la <span className="text-orange-400 font-semibold">tranquilidad de saber</span> que 
+                  si tu mejor amigo se pierde, hay un sistema probado y una comunidad entera 
+                  lista para ayudarte a traerlo de vuelta a casa.
+                </CardDescription>
+                <p className="text-sm md:text-base text-orange-300/80 font-medium italic">
+                  Porque tu mascota no es solo una mascota. Es familia.
+                </p>
+              </CardContent>
+            </Card>
+            </div>
+          </AnimatedSection>
+        </section>
+
+        {/* CTA Final Mejorado */}
+        <section className="px-4 pb-8">
+          <AnimatedSection delay={0}>
+            <div className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8">
+              <div className="space-y-3 md:space-y-4">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                  Protege lo que más amas
+                </h2>
+                <p className="text-base md:text-lg text-gray-400 max-w-xl mx-auto">
+                  Únete a cientos de dueños que ya duermen tranquilos
+                </p>
+              </div>
+              
+              {user ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-2xl hover:shadow-orange-500/30 text-lg md:text-xl px-8 md:px-10 py-4 md:py-5 transition-all duration-300 hover:scale-105 active:scale-95"
+                >
+                  <Link to="/dashboard" className="inline-flex items-center gap-3">
+                    Gestionar mis Mascotas
+                    <svg className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                </Button>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-2xl hover:shadow-orange-500/30 text-lg md:text-xl px-8 md:px-10 py-4 md:py-5 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    <Link to="/register">Comenzar Ahora - Es Gratis</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="border-2 border-gray-800 text-gray-300 hover:border-orange-500 hover:text-orange-400 hover:bg-orange-500/5 text-lg md:text-xl px-8 md:px-10 py-4 md:py-5 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    <Link to="/login">Ya tengo cuenta</Link>
+                  </Button>
+                </div>
+              )}
+              
+              <p className="text-xs md:text-sm text-gray-500">
+                ✓ Configuración en 5 minutos &nbsp;•&nbsp; ✓ Soporte 24/7 &nbsp;•&nbsp; ✓ Actualizaciones incluidas
+              </p>
+            </div>
+          </AnimatedSection>
+        </section>
+      </div>
     </div>
   );
 }
