@@ -9,20 +9,12 @@ import { auth } from "../firebase/config";
 const getApiBaseURL = (): string => {
   const apiUrl = import.meta.env.VITE_API_URL;
   
-  // En producción, no usar localhost como fallback
+  // En producción, usar la URL de la API
   if (import.meta.env.PROD) {
-    if (!apiUrl) {
-      console.error(
-        "❌ VITE_API_URL no está configurada en producción.\n" +
-        "Por favor, configura la variable de entorno VITE_API_URL con la URL completa de tu API.\n" +
-        "Ejemplo: https://app-my-dw.vercel.app/api"
-      );
-      // Usar la URL del backend en Vercel como fallback temporal
-      // IMPORTANTE: Debes configurar VITE_API_URL en producción
-      return "https://app-my-dw.vercel.app/api";
-    }
+    // URL de la API en producción
+    const productionApiUrl = apiUrl || "https://app-my-dw.vercel.app";
     // Asegurarse de que la URL termine con /api
-    return apiUrl.endsWith("/api") ? apiUrl : `${apiUrl}/api`;
+    return productionApiUrl.endsWith("/api") ? productionApiUrl : `${productionApiUrl}/api`;
   }
   
   // En desarrollo, usar localhost como fallback
