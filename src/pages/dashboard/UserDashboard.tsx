@@ -21,6 +21,7 @@ import {
   toggleLostStatus,
 } from "../../features/pets/petsSlice";
 import ConfirmModal from "../../components/ConfirmModal";
+import ReportLostModal from "../../components/ReportLostModal";
 import RemindersModal, { Reminder } from "../../components/RemindersModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -52,6 +53,15 @@ const UserDashboard = () => {
     petId: null,
     petName: "",
     currentStatus: false,
+  });
+  const [reportLostModal, setReportLostModal] = useState<{
+    isOpen: boolean;
+    petId: string | null;
+    petName: string;
+  }>({
+    isOpen: false,
+    petId: null,
+    petName: "",
   });
   const [remindersModalOpen, setRemindersModalOpen] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -95,12 +105,22 @@ const UserDashboard = () => {
     currentStatus: boolean,
     petName: string
   ) => {
-    setToggleLostModal({
-      isOpen: true,
-      petId,
-      petName,
-      currentStatus,
-    });
+    if (currentStatus) {
+      // Si ya está perdida, mostrar modal de confirmación para marcar como encontrada
+      setToggleLostModal({
+        isOpen: true,
+        petId,
+        petName,
+        currentStatus,
+      });
+    } else {
+      // Si no está perdida, mostrar modal para reportar con ubicación
+      setReportLostModal({
+        isOpen: true,
+        petId,
+        petName,
+      });
+    }
   };
 
   const handleToggleLostConfirm = async () => {
@@ -130,6 +150,38 @@ const UserDashboard = () => {
         petId: null,
         petName: "",
         currentStatus: false,
+      });
+    } finally {
+      setTogglingLostId(null);
+    }
+  };
+
+  const handleReportLostConfirm = async (location: string) => {
+    if (!reportLostModal.petId) return;
+
+    try {
+      setTogglingLostId(reportLostModal.petId);
+      setErrorMessage(null);
+      await dispatch(
+        toggleLostStatus({ 
+          id: reportLostModal.petId, 
+          isLost: true, 
+          lostLocation: location 
+        })
+      ).unwrap();
+      setReportLostModal({
+        isOpen: false,
+        petId: null,
+        petName: "",
+      });
+    } catch (error: any) {
+      console.error("Error al reportar mascota perdida:", error);
+      const errorMsg = error?.message || "Error al reportar la mascota como perdida. Por favor, intenta de nuevo.";
+      setErrorMessage(errorMsg);
+      setReportLostModal({
+        isOpen: false,
+        petId: null,
+        petName: "",
       });
     } finally {
       setTogglingLostId(null);
@@ -374,16 +426,17 @@ const UserDashboard = () => {
                       <CardTitle className="text-base font-semibold text-gray-100 line-clamp-1">
                         {pet.name}
                       </CardTitle>
-                      <div className="flex flex-wrap gap-1 shrink-0">
+                      <div className="flex flex-wrap gap-1.5 shrink-0">
                         {pet.isLost && (
-                          <Badge variant="destructive" className="text-xs px-2 py-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
                             PERDIDA
-                          </Badge>
+                          </span>
                         )}
                         {!pet.tagId && (
-                          <Badge className="bg-amber-500 text-white border-0 text-xs px-2 py-0">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
                             SIN CHAPITA
-                          </Badge>
+                          </span>
                         )}
                       </div>
                     </div>
@@ -519,6 +572,19 @@ const UserDashboard = () => {
         onClose={() => setRemindersModalOpen(false)}
         reminders={reminders}
         onCompleteReminder={handleCompleteReminder}
+      />
+
+      <ReportLostModal
+        isOpen={reportLostModal.isOpen}
+        onClose={() =>
+          setReportLostModal({
+            isOpen: false,
+            petId: null,
+            petName: "",
+          })
+        }
+        onConfirm={handleReportLostConfirm}
+        petName={reportLostModal.petName}
       />
     </div>
   );

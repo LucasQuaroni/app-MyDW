@@ -16,6 +16,7 @@ interface IPets {
   isPublicProfile?: boolean;
   isLost?: boolean;
   lostAt?: Date;
+  lostLocation?: string;
   createdAt: Date;
   updatedAt: Date;
 }

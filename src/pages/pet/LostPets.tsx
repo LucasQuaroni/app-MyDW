@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { fetchLostPets } from "../../features/pets/petsSlice";
+import { selectUser } from "../../features/auth/authSlice";
 import IPets from "../../types/PetsType";
 import {
   DogIcon,
@@ -14,16 +15,23 @@ import {
   Clock,
   ArrowRight,
   PawPrint,
+  Filter,
+  X,
+  ChevronDown,
+  Plus,
 } from "lucide-react";
 
 const LostPets = () => {
   const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
   const { lostPets, lostPetsLoading, lostPetsError } = useAppSelector(
     (state) => state.pets
   );
   const [imageLoadedMap, setImageLoadedMap] = useState<Record<string, boolean>>(
     {}
   );
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchLostPets());
@@ -32,6 +40,20 @@ const LostPets = () => {
   const handleImageLoad = (petId: string) => {
     setImageLoadedMap((prev) => ({ ...prev, [petId]: true }));
   };
+
+  // Obtener lista única de ubicaciones de las mascotas perdidas
+  const availableLocations = useMemo(() => {
+    const locations = lostPets
+      .map((pet) => pet.lostLocation)
+      .filter((location): location is string => !!location);
+    return [...new Set(locations)].sort();
+  }, [lostPets]);
+
+  // Filtrar mascotas por ubicación seleccionada
+  const filteredPets = useMemo(() => {
+    if (!selectedLocation) return lostPets;
+    return lostPets.filter((pet) => pet.lostLocation === selectedLocation);
+  }, [lostPets, selectedLocation]);
 
   if (lostPetsLoading) {
     return (
@@ -71,83 +93,167 @@ const LostPets = () => {
   }
 
   return (
-    <div className="min-h-screen py-6 md:py-12 px-4">
+    <div className="min-h-screen py-6 md:py-10 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Hero Section - Emotional & Supportive */}
-        <div className="text-center mb-8 md:mb-16">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 mb-4 md:mb-6 px-4 py-2 md:px-5 md:py-2.5 bg-red-500/10 text-red-400 rounded-full text-sm md:text-base font-medium border border-red-500/20 backdrop-blur-sm">
-            <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
-            <span>Mascotas perdidas</span>
-          </div>
-
-          {/* Main Heading - Emotional */}
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight px-2">
-            <span className="block mb-2">Estamos aquí para ayudarte</span>
-            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-              a encontrar a tu familia
-            </span>
-          </h1>
-
-          {/* Subheading - Supportive Message */}
-          <div className="max-w-3xl mx-auto space-y-3 md:space-y-4 px-2">
-            <p className="text-base md:text-xl text-gray-300 leading-relaxed">
-              Sabemos lo difícil que es cuando un miembro de la familia se
-              pierde.{" "}
-              <span className="text-orange-400 font-semibold">
-                No estás solo en esto.
-              </span>
-            </p>
-            <p className="text-sm md:text-lg text-gray-400 leading-relaxed">
-              Si has visto alguna de estas mascotas, tu ayuda puede cambiar
-              todo. Cada reporte cuenta, cada mirada ayuda.
-            </p>
-          </div>
-
-          {/* Stats or Encouragement */}
-          {lostPets.length > 0 && (
-            <div className="mt-6 md:mt-8 flex flex-wrap justify-center gap-4 md:gap-6">
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl px-4 md:px-6 py-3 md:py-4">
-                <div className="text-2xl md:text-3xl font-bold text-orange-400">
-                  {lostPets.length}
-                </div>
-                <div className="text-xs md:text-sm text-gray-400 mt-1">
-                  {lostPets.length === 1
-                    ? "Mascota buscando casa"
-                    : "Mascotas buscando casa"}
-                </div>
-              </div>
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl px-4 md:px-6 py-3 md:py-4">
-                <div className="text-2xl md:text-3xl font-bold text-orange-400">
-                  <Heart className="w-6 h-6 md:w-8 md:h-8 mx-auto fill-orange-400 text-orange-400" />
-                </div>
-                <div className="text-xs md:text-sm text-gray-400 mt-1">
-                  Tu ayuda marca la diferencia
-                </div>
+        {/* Header Section - Compact & Actionable */}
+        <div className="mb-6 md:mb-10">
+          {/* Top bar with live counter and CTA */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            {/* Live counter */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-full">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+                <span className="text-red-400 text-sm font-semibold">
+                  {lostPets.length} {lostPets.length === 1 ? "mascota perdida" : "mascotas perdidas"}
+                </span>
               </div>
             </div>
-          )}
+
+            {/* CTA Button */}
+            {user ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Reportar mascota perdida</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30"
+              >
+                <Plus className="w-4 h-4" />
+                <span>¿Perdiste tu mascota? Publicá acá</span>
+              </Link>
+            )}
+          </div>
+
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
+              Mascotas perdidas en{" "}
+              <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                Argentina
+              </span>
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base">
+              Si reconocés alguna, contactá al dueño para ayudarla a volver a casa
+            </p>
+          </div>
+
+          {/* Filter bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            {/* Location Filter */}
+            {availableLocations.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    selectedLocation
+                      ? "bg-orange-500/20 text-orange-400 border border-orange-500/50"
+                      : "bg-gray-800/80 text-gray-300 border border-gray-700 hover:border-gray-600"
+                  }`}
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>{selectedLocation || "Filtrar por ubicación"}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Dropdown */}
+                {isFilterOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setIsFilterOpen(false)}
+                    />
+                    <div className="absolute left-0 sm:left-auto z-20 mt-2 w-full sm:w-72 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+                      {selectedLocation && (
+                        <button
+                          onClick={() => {
+                            setSelectedLocation("");
+                            setIsFilterOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-gray-700/50 border-b border-gray-700"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>Limpiar filtro</span>
+                        </button>
+                      )}
+                      <div className="max-h-64 overflow-y-auto">
+                        {availableLocations.map((location) => (
+                          <button
+                            key={location}
+                            onClick={() => {
+                              setSelectedLocation(location);
+                              setIsFilterOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${
+                              selectedLocation === location
+                                ? "bg-orange-500/20 text-orange-400"
+                                : "text-gray-300 hover:bg-gray-700/50"
+                            }`}
+                          >
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate text-left flex-1">{location}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Active filter chip */}
+            {selectedLocation && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-xl text-sm">
+                <MapPin className="w-4 h-4 text-orange-400" />
+                <span className="text-orange-300 truncate">{selectedLocation}</span>
+                <span className="text-gray-500">({filteredPets.length})</span>
+                <button
+                  onClick={() => setSelectedLocation("")}
+                  className="ml-1 text-orange-400 hover:text-orange-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Lost Pets Grid */}
-        {lostPets.length === 0 ? (
+        {filteredPets.length === 0 ? (
           <div className="text-center py-16 md:py-24 bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-3xl px-4">
             <div className="max-w-md mx-auto">
               <div className="mb-6">
                 <Heart className="w-16 h-16 md:w-20 md:h-20 mx-auto text-orange-400 fill-orange-400/20" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                ¡Excelentes noticias!
+                {selectedLocation ? "Sin resultados" : "¡Excelentes noticias!"}
               </h2>
               <p className="text-base md:text-lg text-gray-300 leading-relaxed">
-                No hay mascotas perdidas reportadas en este momento. Todas las
-                mascotas están seguras en casa con sus familias.
+                {selectedLocation 
+                  ? `No hay mascotas perdidas reportadas en ${selectedLocation}.`
+                  : "No hay mascotas perdidas reportadas en este momento. Todas las mascotas están seguras en casa con sus familias."
+                }
               </p>
+              {selectedLocation && (
+                <button
+                  onClick={() => setSelectedLocation("")}
+                  className="mt-4 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg text-sm font-medium hover:bg-orange-500/30 transition-colors"
+                >
+                  Ver todas las mascotas
+                </button>
+              )}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-            {lostPets.map((pet) => (
+            {filteredPets.map((pet) => (
               <PetCard
                 key={pet._id}
                 pet={pet}
@@ -268,6 +374,16 @@ const PetCard = ({ pet, imageLoaded, onImageLoad }: PetCardProps) => {
 
       {/* Pet Info Section */}
       <div className="relative p-4 space-y-3">
+        {/* Lost Location */}
+        {pet.lostLocation && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+            <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
+            <span className="text-orange-300 text-sm font-medium truncate">
+              Perdida en: {pet.lostLocation}
+            </span>
+          </div>
+        )}
+
         {/* Lost Date */}
         {getDaysLostText() && (
           <div className="flex items-center gap-2 text-red-400 text-sm font-medium">

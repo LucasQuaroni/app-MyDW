@@ -134,11 +134,11 @@ export const activateTag = createAsyncThunk<
 
 export const toggleLostStatus = createAsyncThunk<
   IPets,
-  { id: string; isLost: boolean },
+  { id: string; isLost: boolean; lostLocation?: string },
   { rejectValue: string }
->("pets/toggleLostStatus", async ({ id, isLost }, { rejectWithValue }) => {
+>("pets/toggleLostStatus", async ({ id, isLost, lostLocation }, { rejectWithValue }) => {
   try {
-    const response = await api.patch(`/pets/${id}/lost`, { isLost });
+    const response = await api.patch(`/pets/${id}/lost`, { isLost, lostLocation });
     return response.data;
   } catch (error: any) {
     return rejectWithValue(
