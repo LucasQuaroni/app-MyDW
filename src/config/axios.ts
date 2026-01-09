@@ -8,15 +8,17 @@ import { auth } from "../firebase/config";
  */
 const getApiBaseURL = (): string => {
   const apiUrl = import.meta.env.VITE_API_URL;
-  
+
   // En producción, usar la URL de la API
   if (import.meta.env.PROD) {
     // URL de la API en producción
     const productionApiUrl = apiUrl || "https://app-my-dw.vercel.app";
     // Asegurarse de que la URL termine con /api
-    return productionApiUrl.endsWith("/api") ? productionApiUrl : `${productionApiUrl}/api`;
+    return productionApiUrl.endsWith("/api")
+      ? productionApiUrl
+      : `${productionApiUrl}api`;
   }
-  
+
   // En desarrollo, usar localhost como fallback
   return apiUrl || "http://localhost:3019/api";
 };
